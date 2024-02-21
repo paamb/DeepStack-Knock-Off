@@ -18,6 +18,9 @@ class DeckManager():
     suits = ['S', 'H', 'D', 'C']
     values = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
 
+    def __init__(self) -> None:
+        self.create_deck_of_cards()
+
     def create_deck_of_cards(self):
         self.cards = [Card(suit, value)
                       for value in self.values for suit in self.suits]
@@ -26,7 +29,7 @@ class DeckManager():
     def shuffle_cards(self):
         random.shuffle(self.cards)
 
-    def get_number_of_cards(self, num_cards):
+    def get_n_cards(self, num_cards):
         # This should be an illegal state
         assert len(self.cards) >= num_cards
 
@@ -37,10 +40,11 @@ class DeckManager():
         return deal_cards
 
 
-deckmanager = DeckManager()
-deckmanager.create_deck_of_cards()
-print(deckmanager.cards)
-deckmanager.shuffle_cards()
-print(deckmanager.cards)
-print(deckmanager.get_number_of_cards(2))
-print(deckmanager.cards)
+if __name__ == '__main__':
+    deckmanager = DeckManager()
+    deckmanager.create_deck_of_cards()
+    print(deckmanager.cards)
+    deckmanager.shuffle_cards()
+    print(deckmanager.cards)
+    print(deckmanager.get_n_cards(2))
+    print(deckmanager.cards)
