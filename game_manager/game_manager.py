@@ -60,9 +60,7 @@ class TexasHoldemRoundManager(RoundManager):
 
     def finalize_round(self):
         # show cards
-        remaining_players
-
-        self.game_manager.rule_manager.get_winner(remaining_players)
+        self.game_manager.rule_manager.get_winner(self.remaining_players, self.community_cards)
 
 
 
