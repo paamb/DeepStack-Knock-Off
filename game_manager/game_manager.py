@@ -15,24 +15,24 @@ class RoundManager:
         self.deck_manager = DeckManager()
         self.game_manager = game_manager
         self.burnt_cards = []
+        self.community_cards = []
+        self.remaining_players = set(game_manager.players)
 
     def initialize_round(self):
         self.deck_manager.shuffle_cards()
-        pass
 
     def burn_card(self):
         self.burnt_cards.append(self.deck_manager.get_n_cards(1))
+
+    def deal_community_cards(self, number_of_community_cards):
+        cards = self.deck_manager.get_n_cards(number_of_community_cards)
+        self.community_cards = self.community_cards + cards
 
     def deal_hole_cards(self, number_of_cards_per_player):
         cards = []
         for player in self.game_manager.players:
             cards = self.deck_manager.get_n_cards(number_of_cards_per_player)
-            print("Player", player)
-            print("cards: ", cards)
             player.recieve_cards(cards)
-            print("Player cards", player.hand)
-
-    pass
 
 
 class TexasHoldemRoundManager(RoundManager):
@@ -43,10 +43,10 @@ class TexasHoldemRoundManager(RoundManager):
         super().deal_hole_cards(2)
 
     def play_flop(self):
-        pass
+        super().deal_community_cards(3)
 
     def play_turn_river(self):
-        pass
+        super().deal_community_cards(1)
 
     def play_round(self):
         super().initialize_round()
@@ -55,6 +55,16 @@ class TexasHoldemRoundManager(RoundManager):
         self.play_flop()
         self.play_turn_river()
         self.play_turn_river()
+
+        self.finalize_round()
+
+    def finalize_round(self):
+        # show cards
+        remaining_players
+
+        self.game_manager.rule_manager.get_winner(remaining_players)
+
+
 
 
 class GameManager:
