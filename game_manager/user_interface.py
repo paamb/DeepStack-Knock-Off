@@ -29,15 +29,27 @@ class UserInterface():
 
         print(base)
 
-    def display_state(self, players, remaining_players, community_cards):
+    def print_pot(self, players, row_length):
+        estimated_pot_length = 10
+        base = ' ' * (row_length // 2 - estimated_pot_length // 2)
+        pot = 0
+        for player in players:
+            pot += player.betted_chips
+        base += str(pot) + chips
+        print(base)
+        
+
+    def display_state(self, players, community_cards):
+        players_in_upper_row = players[:len(players)//2 + 1]
+        players_in_lower_row = reversed(players[len(players)//2 + 1:])
+        
+        
         print("\033c")
 
-        WIDTH = int(len(players) * 5 / 2)
-        HEIGHT = 5
-        players_in_upper_row = players[:len(players)//2]
-        players_in_lower_row = reversed(players[len(players)//2:])
-
         first_row_length = self.print_player_row(players_in_upper_row)
+        print('\n')
+
+        self.print_pot(players, first_row_length)
         print('\n')
 
         self.print_community_row(community_cards, first_row_length)
