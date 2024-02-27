@@ -3,8 +3,10 @@ import random
 
 class Card:
     def __init__(self, suit, value) -> None:
-        self.suit = suit
-        self.value = value
+        if not isinstance(suit, str) or not isinstance(value, str):
+            raise TypeError
+        self.suit: str = suit
+        self.value: str = value
 
     def __str__(self):
         return self.suit + self.value
