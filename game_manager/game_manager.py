@@ -1,6 +1,8 @@
 from typing import List
 from player import Player, HumanPlayer, AIPlayer
+from rules_manager import RuleManager
 from deck_manager import DeckManager
+from user_interface import UserInterface
 import pivotal_parameters as piv
 
 
@@ -11,7 +13,7 @@ class RoundManager:
     Keeps track of pot, current call and stages of the round.
     """
 
-    def __init__(self, game_manager) -> None:
+    def __init__(self, game_manager: 'GameManager') -> None:
         self.deck_manager = DeckManager()
         self.game_manager = game_manager
         self.burnt_cards = []
@@ -41,12 +43,18 @@ class TexasHoldemRoundManager(RoundManager):
 
     def play_preflop(self):
         super().deal_hole_cards(2)
+        self.game_manager.user_interface.display_state(game_manager.players, self.remaining_players, self.community_cards)
+        action = input()
 
     def play_flop(self):
         super().deal_community_cards(3)
+        self.game_manager.user_interface.display_state(game_manager.players, self.remaining_players, self.community_cards)
+        action = input()
 
     def play_turn_river(self):
         super().deal_community_cards(1)
+        self.game_manager.user_interface.display_state(game_manager.players, self.remaining_players, self.community_cards)
+        action = input()
 
     def play_round(self):
         super().initialize_round()
@@ -75,6 +83,14 @@ class GameManager:
     def __init__(self) -> None:
         self.create_players()
         self.set_round_manager()
+        self.set_rule_manager()
+        self.set_user_interface()
+
+    def set_rule_manager(self):
+        self.rule_manager = RuleManager()
+
+    def set_user_interface(self):
+        self.user_interface = UserInterface()
 
     def create_players(self):
         self.players = [HumanPlayer()

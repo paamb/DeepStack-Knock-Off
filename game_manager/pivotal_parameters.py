@@ -1,4 +1,4 @@
-number_of_human_players = 3
+number_of_human_players = 6
 number_of_AI_players = 0
 
 
