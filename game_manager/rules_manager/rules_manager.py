@@ -1,11 +1,10 @@
 from collections import defaultdict
 from player import Player
 from deck_manager import Card
+from utils import *
 
 
 class RuleManager():
-    card_values = {'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
-                   '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2}
 
     def sort_on_value(self, cards):
         return sorted(cards, key=lambda card: self.card_values[card.value])
@@ -28,9 +27,9 @@ class RuleManager():
             return players_with_straight_flush
 
         # check if someone or multiple people have 4 of a kind
-        # players_with_4oak = self.get_players_with_best_4oak(players)
-        # if len(players_with_4oak > 0):
-        #     return players_with_4oak
+        players_with_4oak = self.get_players_with_best_4oak(players)
+        if len(players_with_4oak > 0):
+            return players_with_4oak
 
         # # check if someone or multiple people have full house
         # players_with_full_house = self.get_players_with_best_full_house(
@@ -67,10 +66,13 @@ class RuleManager():
         # players_with_high_card = self.get_players_with_best_high_card(players)
         # if len(players_with_high_card) > 0:
         #     return players_with_high_card
+    def get_card_int_value(self, card: Card):
+        return self.card_values[card.value]
 
-    def find_players_with_highest_value_card(self, player_card_tuples):
-        highest_value_card = max(player_card_tuples, key=lambda x: x[1])[1]
-        return [player for player, card_value in player_card_tuples if card_value == highest_value_card]
+    def find_players_with_highest_card_from_single_card(self, player_and_highest_card_tuples):
+        highest_value_card = self.find_highest_card_from_player_card_tuples(
+            player_and_highest_card_tuples)
+        return [player for player, card_value in player_and_highest_card_tuples if card_value == highest_value_card]
 
     def check_straight_flush_from_start_card(self, cards, min_value, max_value):
         previous_value = max_value
@@ -132,36 +134,74 @@ class RuleManager():
                 players_with_straight_flush.append(
                     (player, highest_card_in_straight))
                 print(highest_card_in_straight)
+
         if len(players_with_straight_flush) > 0:
-            players_with_highest_straight_flush = self.find_players_with_highest_value_card(
+            players_with_highest_straight_flush = find_players_with_highest_card_from_single_card(
                 players_with_straight_flush)
             return players_with_highest_straight_flush
         else:
             return []
 
-    def player_has_4oak(self, cards):
-        # In Texas holdem we will loop over 4 possible 4oaks
-        num_cards_in_4oak = 4
-        num_possible_4oak = len(cards) - num_cards_in_4oak + 1
-        for i in range(len(cards) - 1, len(cards) - num_possible_4oak - 1, -1):
-            print(i)
+    def player_has_n_oak(self, cards, n):
+        value_count = {}
+        for card in cards:
+            value_count[card.value] = value_count.get(card.value, 0) + 1
+        for value, count in value_count.items():
+            if count == n:
+                return (True, card_values[value])
+        return (False, 0)
 
-            for j in range(i-1, i-num_cards_in_4oak, -1):
-                print(j)
-                if cards[i] != cards[j]:
-                    break
-            else:
-                return
-            print("__________________________________")
-            # return (True, max_value)
-            # return (False, 0)
+    def player_has_4oak(self, cards):
+        # In Texas holdem we will loop over 4 possible 4oak's
+        # If player has 4-of-a-kind the function will return the integer value of the cards in the 4-of-a-kind
+        return self.player_has_n_oak(self, cards, 4)
+
+    def find_best_card(self, cards):
+        return max(cards, key=lambda card: get_card_int_value(card))
+
+    def get_players_with_best_high_card(self, player_cards):
+        # for player, cards in player_cards.items():
+        player_and_best_card = [(player, get_card_int_value(
+            self.find_best_card(cards))) for player, cards in player_cards.items()]
+
+        best_card = find_highest_card_from_player_card_tuples(
+            player_and_best_card)
+
+        players_with_highest_card = [
+            player for player, player_best_card in player_and_best_card.items() if player_best_card == best_card]
+
+        return players_with_highest_card
 
     def get_players_with_best_4oak(self, player_cards):
         players_with_4oak = []
         for (player, cards) in player_cards.items():
-            if self.player_has_4oak(cards):
-                players_with_4oak.append(player)
-        return players_with_4oak
+            has_4oak, value_of_4oak = self.player_has_4oak(cards)
+            if has_4oak:
+                players_with_4oak.append((player, value_of_4oak))
+
+        if len(players_with_4oak) > 0:
+            # Checks for the best 4-of-a-kind
+            players_with_best_4oak = find_players_with_highest_card_from_single_card(
+                players_with_4oak)
+            if players_with_best_4oak > 1:
+                cards_of_players_with_4oak = {
+                    player: player_cards[player] for player, value_of_4oak in players_with_best_4oak}
+
+                cards_of_players_with_4oak_excluding_4oak = {}
+                for player, cards_of_player_with_4oak in cards_of_players_with_4oak.items():
+                    cards_of_player_with_4oak_excluding_4oak = get_cards_excluding_value(
+                        cards_of_player_with_4oak, value_of_4oak)
+                    cards_of_players_with_4oak_excluding_4oak[player] = cards_of_player_with_4oak_excluding_4oak
+
+                # Checks for the highest kicker if several players has the same 4-of-a-kind
+                player_cards_without_4oak = self.get_players_with_best_high_card(
+                    cards_of_players_with_4oak_excluding_4oak)
+
+                players_with_best_4oak = find_players_with_highest_kicker(
+                    players_with_4oak)
+            return players_with_best_4oak
+        else:
+            return []
 
     def get_players_with_best_full_house(self, player_cards):
         pass
