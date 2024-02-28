@@ -159,7 +159,7 @@ class RuleManager():
 
         return players_with_highest_card
 
-    def get_players_with_4oak(self, player_cards: Dict[Player, List[Card]]) -> Tuple[List[Tuple[Player, int]], int]:
+    def get_players_with_4oak(self, player_cards: Dict[Player, List[Card]]) -> Tuple[List[Tuple[Player, str]], str]:
         players_with_4oak = []
         for (player, cards) in player_cards.items():
             has_4oak, value_of_4oak = self.player_has_4oak(cards)
@@ -171,13 +171,14 @@ class RuleManager():
         return find_players_with_highest_card_from_single_card(
             players_with_4oak)
 
-    def create_player_hands_excluding_value(player_cards: Dict[Player, List[Card]], value_to_exclude: int) -> Dict[Player, List[Card]]:
-        player_cards_excluding_value = {}
-        for player, cards in player_cards_excluding_value.items():
-            cards_excluding_value = get_cards_excluding_value(
-                cards, value_to_exclude)
-            player_cards_excluding_value[player] = cards_excluding_value
-        return player_cards_excluding_value
+    # def create_player_hands_excluding_value(player_cards: Dict[Player, List[Card]], value_to_exclude: int) -> Dict[Player, List[Card]]:
+    #     player_cards_excluding_value = {}
+    #     print("Value to exclude : ", value_to_exclude)
+    #     for player, cards in player_cards_excluding_value.items():
+    #         cards_excluding_value = get_cards_excluding_value(
+    #             cards, value_to_exclude)
+    #         player_cards_excluding_value[player] = cards_excluding_value
+    #     return player_cards_excluding_value
 
     def create_player_hands_excluding_4oak_cards(self, cards_of_players_with_4oak: Dict[Player, List[Card]], value_of_4oak: int) -> Dict[Player, List[Card]]:
         return create_player_hands_excluding_value(cards_of_players_with_4oak, value_of_4oak)
@@ -206,17 +207,12 @@ class RuleManager():
                 cards_of_players_with_4oak = {
                     player: player_cards[player] for player in players_with_highest_4oak}
 
-                print(cards_of_players_with_4oak)
-                print("Val: ", value_of_4oak)
                 # Find the player with the highest kicker
                 player_cards_excluding_4oak = self.create_player_hands_excluding_4oak_cards(
                     cards_of_players_with_4oak, value_of_4oak)
-                print(player_cards_excluding_4oak)
                 # Checks for the highest kicker if several players has the same 4-of-a-kind
                 player_and_highest_card_tuple = find_player_and_highest_card_for_each_player(
                     player_cards_excluding_4oak)
-                print("-------------")
-                print(player_and_highest_card_tuple)
                 player_with_best_kicker = find_players_with_highest_card_from_single_card(
                     player_and_highest_card_tuple)
                 return player_with_best_kicker

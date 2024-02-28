@@ -36,7 +36,7 @@ def find_players_with_highest_card_from_single_card(player_and_highest_card_tupl
 
 
 def get_cards_excluding_value(cards: List[Card], value: str) -> List[Card]:
-    return [card for card in cards if card.value != value]
+    return [card for card in cards if card_values[card.value] != value]
 
 
 def create_player_hands_excluding_value(player_cards: Dict[Player, List[Card]], value_to_exclude: int) -> Dict[Player, List[Card]]:

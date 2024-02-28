@@ -1,9 +1,9 @@
 from typing import List
-from player import Player, HumanPlayer, AIPlayer
-from rules_manager import RuleManager
-from deck_manager import DeckManager
-from user_interface import UserInterface
-import pivotal_parameters as piv
+from .player import Player, HumanPlayer, AIPlayer
+from .rules_manager.rules_manager import RuleManager
+from .deck_manager import DeckManager
+from .user_interface import UserInterface
+from .pivotal_parameters import pivotal_parameters as piv
 
 
 class RoundManager:
