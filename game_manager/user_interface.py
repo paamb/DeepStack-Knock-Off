@@ -1,7 +1,8 @@
-from player import Player
-from deck_manager import Card
-from rules_manager import RuleManager
-from unicode import deck_matrix, chips, hidden_card
+from .player import Player
+from .deck_manager import Card
+from .rules_manager.rules_manager import RuleManager
+from .unicode import deck_matrix, chips, hidden_card
+
 
 class UserInterface():
 
@@ -14,7 +15,8 @@ class UserInterface():
         for player in players:
             player_string = ''
             for card in player.hand:
-                player_string = player_string + deck_matrix[(card.suit, card.value)] + ' '
+                player_string = player_string + \
+                    deck_matrix[(card.suit, card.value)] + ' '
             player_string = player_string + ' ' + str(player.chips) + chips
 
             if not current_player == None and player == current_player:
@@ -25,7 +27,7 @@ class UserInterface():
                 invisible_characters += 9
 
             row_string = row_string + player_string + self.WHITESPACE
-        
+
         print(row_string)
         return len(row_string) - invisible_characters
     
@@ -50,7 +52,6 @@ class UserInterface():
             pot += player.betted_chips
         base += str(pot) + chips
         print(base)
-        
 
     def display_state(self, players, community_cards, current_player_index=None):
         players_in_upper_row = players[:len(players)//2]
@@ -73,10 +74,6 @@ class UserInterface():
 
         self.print_player_row(players_in_lower_row, current_player)
         print('\n')
-
-
-
-
 
 
 if __name__ == '__main__':

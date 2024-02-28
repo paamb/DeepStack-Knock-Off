@@ -1,9 +1,9 @@
 from typing import List
-from player import Player, HumanPlayer, AIPlayer
-from rules_manager import RuleManager
-from deck_manager import DeckManager
-from user_interface import UserInterface
-import pivotal_parameters as piv
+from .player import Player, HumanPlayer, AIPlayer
+from .rules_manager.rules_manager import RuleManager
+from .deck_manager import DeckManager, Card
+from .user_interface import UserInterface
+from .pivotal_parameters import pivotal_parameters as piv
 
 
 class RoundManager:
@@ -50,9 +50,8 @@ class RoundManager:
         cards = []
         for player in self.game_manager.players:
             cards = self.deck_manager.get_n_cards(number_of_cards_per_player)
-            player.recieve_cards(cards)
+            player.receive_cards(cards)
 
-    
     def remaining_players(self):
         return list(filter(lambda player: not player.is_folded, self.game_manager.players))
 
@@ -63,10 +62,12 @@ class RoundManager:
         while not self.round_is_over(number_of_actions):
             player = self.game_manager.players[current_player_index]
             if not player.is_folded and not player.chips == 0:
-                self.game_manager.user_interface.display_state(self.game_manager.players, self.community_cards, current_player_index)
+                self.game_manager.user_interface.display_state(
+                    self.game_manager.players, self.community_cards, current_player_index)
                 # this is where the action from a player is requested and performed
                 action = player.action(self.get_possible_actions())
-                action_bet = self.game_manager.action_manager.perform_action(player, action, self.current_bet)
+                action_bet = self.game_manager.action_manager.perform_action(
+                    player, action, self.current_bet)
                 if action_bet > self.current_bet:
                     self.current_bet = action_bet
             current_player_index = current_player_index + 1
@@ -90,11 +91,13 @@ class RoundManager:
     def set_starting_player_index(self):
         # TODO: set accurate startingg player index
         self.starting_player_index = self.starting_player_index + 1
+        if self.starting_player_index == len(self.game_manager.players):
+            self.starting_player_index = 0
 
     def get_possible_actions(self):
         # TODO: calculate possible actions
         return self.game_manager.action_manager.POSSIBLE_ACTIONS
-    
+
     def reset_round_manager(self):
         self.current_bet = 0
 
@@ -114,13 +117,13 @@ class ActionManager():
     def __init__(self):
         pass
 
-    def get_possible_actions(self, player, current_bet: int =0):
+    def get_possible_actions(self, player, current_bet: int = 0):
         pass
 
-    def perform_action(self, player: Player, action: str, current_bet: int =0, big_blind: int = 2):
+    def perform_action(self, player: Player, action: str, current_bet: int = 0, big_blind: int = 2):
         if not action in self.POSSIBLE_ACTIONS:
             raise ValueError
-        
+
         if action == 'FOLD':
             player.fold()
         if action == 'CHECK/CALL':
@@ -129,8 +132,9 @@ class ActionManager():
             current_bet = player.bet_or_raise(current_bet, big_blind)
         if action == 'ALL-IN':
             current_bet = player.all_in()
-        
+
         return current_bet
+
 
 class TexasHoldemRoundManager(RoundManager):
     def __init__(self, game_manager) -> None:
@@ -160,15 +164,17 @@ class TexasHoldemRoundManager(RoundManager):
 
     def finalize_round(self):
         # show cards
+
+        self.game_manager.user_interface.round_over(self.game_manager.players, self.community_cards)
         winners = self.game_manager.rule_manager.get_winner(self.remaining_players(), self.community_cards)
         total_pot = self.total_pot()
+        print(winners)
         for player in winners:
             player.receive_chips(total_pot // len(winners))
         
         for player in self.game_manager.players:
             player.round_ended()
 
-        self.game_manager.user_interface.round_over(self.game_manager.players, self.community_cards)
 
 
 
