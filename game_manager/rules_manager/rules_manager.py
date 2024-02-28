@@ -1,13 +1,13 @@
-from collections import defaultdict
-from player import Player
-from deck_manager import Card
-from utils import *
+from typing import Dict, List
+from ..player import Player
+from ..deck_manager import Card
+from .utils import *
 
 
 class RuleManager():
 
     def sort_on_value(self, cards):
-        return sorted(cards, key=lambda card: self.card_values[card.value])
+        return sorted(cards, key=lambda card: card_values[card.value])
 
     def get_winner(self, players, community_cards=[]):
 
@@ -27,8 +27,8 @@ class RuleManager():
             return players_with_straight_flush
 
         # check if someone or multiple people have 4 of a kind
-        players_with_4oak = self.get_players_with_best_4oak(players)
-        if len(players_with_4oak > 0):
+        players_with_4oak = self.get_players_with_best_4oak_hand(player_cards)
+        if len(players_with_4oak) > 0:
             return players_with_4oak
 
         # # check if someone or multiple people have full house
@@ -66,47 +66,49 @@ class RuleManager():
         # players_with_high_card = self.get_players_with_best_high_card(players)
         # if len(players_with_high_card) > 0:
         #     return players_with_high_card
-    def get_card_int_value(self, card: Card):
-        return self.card_values[card.value]
 
-    def find_players_with_highest_card_from_single_card(self, player_and_highest_card_tuples):
-        highest_value_card = self.find_highest_card_from_player_card_tuples(
-            player_and_highest_card_tuples)
-        return [player for player, card_value in player_and_highest_card_tuples if card_value == highest_value_card]
-
-    def check_straight_flush_from_start_card(self, cards, min_value, max_value):
+    def check_straight_flush_from_start_card(self, cards: List[Card], min_value: int, max_value: int):
         previous_value = max_value
 
-        suit_count = defaultdict(int)
+        suit_count = {}
         for card in reversed(cards):
-            if self.card_values[card.value] < previous_value - 1:
+            if card_values[card.value] < previous_value - 1:
                 # Return something indicating that we dont have a straight-flush
                 return False
 
             # Count the suit to check if we have 5 of a kind
-            suit_count[card.suit] += 1
+            suit_count[card.suit] = suit_count.get(card.suit, 0) + 1
 
             # Can break if we have reached the min value of the straight
-            if self.card_values[card.value] == min_value:
+            if card_values[card.value] == min_value:
                 break
 
-            previous_value = self.card_values[card.value]
+            previous_value = card_values[card.value]
 
         # Check if we have 5 the same suit
         return any(count >= 5 for count in suit_count.values())
 
-    def player_has_royal_flush(self, cards):
+    # EVALUATION FUNCTIONS ### metode: returner nøkkelverdier for hvevr hånd for senere sammenligning
+
+    def player_has_royal_flush(self, cards: List[Card]):
         min_value = 10
         max_value = 14
 
         return self.check_straight_flush_from_start_card(cards, min_value, max_value)
 
-    def player_has_straight_flush(self, cards):
+    def get_players_with_royal_flush(self, player_cards: Dict[Player, List[Card]]):
+        players_with_royal_flush = []
+        for (player, cards) in player_cards.items():
+            if self.player_has_royal_flush(cards):
+                players_with_royal_flush.append(player)
+        return players_with_royal_flush
+
+    def player_has_straight_flush(self, cards: List[Card]):
         # In Texas holdem we will loop over 3 possible straights
         num_possible_straights = len(cards) - 5 + 1
 
         for i, card in enumerate(reversed(cards[-num_possible_straights:])):
-            max_value = self.card_values[card.value]
+            max_value = card_values[card.value]
 
             # The last card in the straight is 4 lower than highest
             min_value = max_value - 4
@@ -116,16 +118,7 @@ class RuleManager():
                 return (True, max_value)
         return (False, 0)
 
-    # EVALUATION FUNCTIONS ### metode: returner nøkkelverdier for hvevr hånd for senere sammenligning
-
-    def get_players_with_royal_flush(self, player_cards):
-        players_with_royal_flush = []
-        for (player, cards) in player_cards.items():
-            if self.player_has_royal_flush(cards):
-                players_with_royal_flush.append(player)
-        return players_with_royal_flush
-
-    def get_players_with_best_straight_flush(self, player_cards):
+    def get_players_with_best_straight_flush(self, player_cards: Dict[Player, List[Card]]):
         players_with_straight_flush = []
         for (player, cards) in player_cards.items():
             has_straight, highest_card_in_straight = self.player_has_straight_flush(
@@ -133,7 +126,6 @@ class RuleManager():
             if has_straight:
                 players_with_straight_flush.append(
                     (player, highest_card_in_straight))
-                print(highest_card_in_straight)
 
         if len(players_with_straight_flush) > 0:
             players_with_highest_straight_flush = find_players_with_highest_card_from_single_card(
@@ -142,7 +134,7 @@ class RuleManager():
         else:
             return []
 
-    def player_has_n_oak(self, cards, n):
+    def player_has_n_oak(self, cards: List[Card], n: int):
         value_count = {}
         for card in cards:
             value_count[card.value] = value_count.get(card.value, 0) + 1
@@ -154,52 +146,80 @@ class RuleManager():
     def player_has_4oak(self, cards):
         # In Texas holdem we will loop over 4 possible 4oak's
         # If player has 4-of-a-kind the function will return the integer value of the cards in the 4-of-a-kind
-        return self.player_has_n_oak(self, cards, 4)
+        return self.player_has_n_oak(cards, 4)
 
-    def find_best_card(self, cards):
-        return max(cards, key=lambda card: get_card_int_value(card))
+    def get_players_with_best_high_card(self, player_cards: Dict[Player, List[Card]]):
+        # Find highest card for each player
+        player_and_highest_card = find_player_and_highest_card_for_each_player(
+            player_cards)
 
-    def get_players_with_best_high_card(self, player_cards):
-        # for player, cards in player_cards.items():
-        player_and_best_card = [(player, get_card_int_value(
-            self.find_best_card(cards))) for player, cards in player_cards.items()]
-
-        best_card = find_highest_card_from_player_card_tuples(
-            player_and_best_card)
-
-        players_with_highest_card = [
-            player for player, player_best_card in player_and_best_card.items() if player_best_card == best_card]
+        # Find players with the highest card
+        players_with_highest_card = find_players_with_highest_card_from_single_card(
+            player_and_highest_card)
 
         return players_with_highest_card
 
-    def get_players_with_best_4oak(self, player_cards):
+    def get_players_with_4oak(self, player_cards: Dict[Player, List[Card]]) -> Tuple[List[Tuple[Player, int]], int]:
         players_with_4oak = []
         for (player, cards) in player_cards.items():
             has_4oak, value_of_4oak = self.player_has_4oak(cards)
             if has_4oak:
                 players_with_4oak.append((player, value_of_4oak))
+        return (players_with_4oak, value_of_4oak)
 
-        if len(players_with_4oak) > 0:
-            # Checks for the best 4-of-a-kind
-            players_with_best_4oak = find_players_with_highest_card_from_single_card(
+    def get_players_with_highest_4oak(self, players_with_4oak: List[Tuple[Player, int]]) -> List[Player]:
+        return find_players_with_highest_card_from_single_card(
+            players_with_4oak)
+
+    def create_player_hands_excluding_value(player_cards: Dict[Player, List[Card]], value_to_exclude: int) -> Dict[Player, List[Card]]:
+        player_cards_excluding_value = {}
+        for player, cards in player_cards_excluding_value.items():
+            cards_excluding_value = get_cards_excluding_value(
+                cards, value_to_exclude)
+            player_cards_excluding_value[player] = cards_excluding_value
+        return player_cards_excluding_value
+
+    def create_player_hands_excluding_4oak_cards(self, cards_of_players_with_4oak: Dict[Player, List[Card]], value_of_4oak: int) -> Dict[Player, List[Card]]:
+        return create_player_hands_excluding_value(cards_of_players_with_4oak, value_of_4oak)
+
+    def get_players_with_best_4oak_hand(self, player_cards: Dict[Player, List[Card]]):
+        players_with_4oak, value_of_4oak = self.get_players_with_4oak(
+            player_cards)
+
+        if len(players_with_4oak) == 1:
+            return players_with_4oak
+
+        elif len(players_with_4oak) > 1:
+            # Checks for the best 4-of-a-kind: List[(Player1, 'K'), (Player2, 'K)]
+            players_with_highest_4oak = self.get_players_with_highest_4oak(
                 players_with_4oak)
-            if players_with_best_4oak > 1:
+
+            # If one player has higher value on the 4 cards in 4-of-a-kind.
+            # This person is the winner
+            if len(players_with_highest_4oak) == 1:
+                return players_with_highest_4oak
+
+            # Find player with best kicker
+            elif len(players_with_highest_4oak) > 1:
+
+                # Add to dictionary only the players with equal 4-of-a-kind
                 cards_of_players_with_4oak = {
-                    player: player_cards[player] for player, value_of_4oak in players_with_best_4oak}
+                    player: player_cards[player] for player in players_with_highest_4oak}
 
-                cards_of_players_with_4oak_excluding_4oak = {}
-                for player, cards_of_player_with_4oak in cards_of_players_with_4oak.items():
-                    cards_of_player_with_4oak_excluding_4oak = get_cards_excluding_value(
-                        cards_of_player_with_4oak, value_of_4oak)
-                    cards_of_players_with_4oak_excluding_4oak[player] = cards_of_player_with_4oak_excluding_4oak
-
+                print(cards_of_players_with_4oak)
+                print("Val: ", value_of_4oak)
+                # Find the player with the highest kicker
+                player_cards_excluding_4oak = self.create_player_hands_excluding_4oak_cards(
+                    cards_of_players_with_4oak, value_of_4oak)
+                print(player_cards_excluding_4oak)
                 # Checks for the highest kicker if several players has the same 4-of-a-kind
-                player_cards_without_4oak = self.get_players_with_best_high_card(
-                    cards_of_players_with_4oak_excluding_4oak)
-
-                players_with_best_4oak = find_players_with_highest_kicker(
-                    players_with_4oak)
-            return players_with_best_4oak
+                player_and_highest_card_tuple = find_player_and_highest_card_for_each_player(
+                    player_cards_excluding_4oak)
+                print("-------------")
+                print(player_and_highest_card_tuple)
+                player_with_best_kicker = find_players_with_highest_card_from_single_card(
+                    player_and_highest_card_tuple)
+                return player_with_best_kicker
         else:
             return []
 
@@ -227,9 +247,9 @@ class RuleManager():
 
 if __name__ == '__main__':
     torstein = Player()
-    torstein.recieve_cards([Card('S', '3'), Card('S', '8')])
+    torstein.receive_cards([Card('S', '3'), Card('S', '8')])
     paal = Player()
-    paal.recieve_cards([Card('S', '2'), Card('S', '3')])
+    paal.receive_cards([Card('S', '2'), Card('S', '3')])
 
     card1 = Card('S', '4')
     card2 = Card('S', '5')
@@ -241,6 +261,6 @@ if __name__ == '__main__':
 
     rule_manager = RuleManager()
     # print(rule_manager.get_winner([torstein, paal], community_cards))
-    rule_manager.player_has_4oak([1, 2, 3, 4, 5, 6, 7])
+    # rule_manager.player_has_4oak([1, 2, 3, 4, 5, 6, 7])
 
     # print

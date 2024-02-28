@@ -32,7 +32,7 @@ class RoundManager:
         cards = []
         for player in self.game_manager.players:
             cards = self.deck_manager.get_n_cards(number_of_cards_per_player)
-            player.recieve_cards(cards)
+            player.receive_cards(cards)
 
 
 class TexasHoldemRoundManager(RoundManager):
@@ -60,9 +60,8 @@ class TexasHoldemRoundManager(RoundManager):
 
     def finalize_round(self):
         # show cards
-        self.game_manager.rule_manager.get_winner(self.remaining_players, self.community_cards)
-
-
+        self.game_manager.rule_manager.get_winner(
+            self.remaining_players, self.community_cards)
 
 
 class GameManager:

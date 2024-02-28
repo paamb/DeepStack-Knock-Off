@@ -1,6 +1,6 @@
 from typing import List
-from deck_manager import Card
-import pivotal_parameters as piv
+from .deck_manager import Card
+from .pivotal_parameters import pivotal_parameters as piv
 
 
 class Player():
@@ -16,7 +16,7 @@ class Player():
     def action():
         pass
 
-    def recieve_cards(self, cards: List[Card]):
+    def receive_cards(self, cards: List[Card]):
         self.hand = self.hand + cards
 
     def __str__(self):
