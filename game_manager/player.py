@@ -54,6 +54,18 @@ class Player():
         self.betted_chips += self.chips
         self.chips = 0
         return self.betted_chips
+    
+    def receive_chips(self, amount):
+        self.chips += amount
+
+    def round_ended(self):
+        self.betted_chips = 0
+        self.is_folded = self.chips == 0
+
+    def hand_over_cards(self):
+        hand = self.hand
+        self.hand = []
+        return hand
 
     def __str__(self):
         return f"Hand: {self.hand} | Chips: {self.chips}\n"

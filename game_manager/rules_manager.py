@@ -68,6 +68,8 @@ class RuleManager():
         # if len(players_with_high_card) > 0:
         #     return players_with_high_card
 
+        return players
+
     def find_players_with_highest_value_card(self, player_card_tuples):
         highest_value_card = max(player_card_tuples, key=lambda x: x[1])[1]
         return [player for player, card_value in player_card_tuples if card_value == highest_value_card]

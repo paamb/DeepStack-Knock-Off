@@ -16,15 +16,28 @@ class RoundManager:
     def __init__(self, game_manager: 'GameManager') -> None:
         self.deck_manager = DeckManager()
         self.game_manager = game_manager
+        self.community_cards = []
+        self.burnt_cards = []
         self.initialize_round()
 
     def initialize_round(self):
-        self.burnt_cards = []
-        self.community_cards = []
         self.starting_player_index = 0
         self.current_bet = 0
 
+        self.collect_cards()
         self.deck_manager.shuffle_cards()
+
+    def collect_cards(self):
+        collected_cards = self.community_cards
+        self.community_cards = []
+
+        collected_cards = collected_cards + self.burnt_cards
+        self.burnt_cards = []
+
+        for player in self.game_manager.players:
+            collected_cards = collected_cards + player.hand_over_cards()
+
+        self.deck_manager.receive_cards(collected_cards)
 
     def burn_card(self):
         self.burnt_cards.append(self.deck_manager.get_n_cards(1))
@@ -41,7 +54,7 @@ class RoundManager:
 
     
     def remaining_players(self):
-        return filter(lambda player: not player.is_folded, self.game_manager.players)
+        return list(filter(lambda player: not player.is_folded, self.game_manager.players))
 
     def round_of_actions(self):
         # a round continues until everyone have had a turn, and everyone have bet the same amount (or all in)
@@ -49,8 +62,8 @@ class RoundManager:
         number_of_actions = 0
         while not self.round_is_over(number_of_actions):
             player = self.game_manager.players[current_player_index]
-            if not player.is_folded or player.chips == 0:
-                self.game_manager.user_interface.display_state(self.game_manager.players, self.community_cards)
+            if not player.is_folded and not player.chips == 0:
+                self.game_manager.user_interface.display_state(self.game_manager.players, self.community_cards, current_player_index)
                 # this is where the action from a player is requested and performed
                 action = player.action(self.get_possible_actions())
                 action_bet = self.game_manager.action_manager.perform_action(player, action, self.current_bet)
@@ -84,6 +97,10 @@ class RoundManager:
     
     def reset_round_manager(self):
         self.current_bet = 0
+
+    def total_pot(self):
+        total_pot = sum(player.betted_chips for player in self.game_manager.players)
+        return total_pot
 
 
 class ActionManager():
@@ -143,7 +160,18 @@ class TexasHoldemRoundManager(RoundManager):
 
     def finalize_round(self):
         # show cards
-        self.game_manager.rule_manager.get_winner(self.remaining_players(), self.community_cards)
+        winners = self.game_manager.rule_manager.get_winner(self.remaining_players(), self.community_cards)
+        total_pot = self.total_pot()
+        for player in winners:
+            player.receive_chips(total_pot // len(winners))
+        
+        for player in self.game_manager.players:
+            player.round_ended()
+
+        self.game_manager.user_interface.round_over(self.game_manager.players, self.community_cards)
+
+
+
 
 class GameManager:
     """
@@ -179,15 +207,15 @@ class GameManager:
         else:
             self.round_manager = TexasHoldemRoundManager(self)
 
+    def game_over(self):
+        return len(list(filter(lambda player:player.chips > 0, self.players))) == 1
+
     def play_game(self):
-        game = 1
-        while game:
+        while not self.game_over():
             self.round_manager.play_round()
-            game = 0
     pass
 
 
 if __name__ == '__main__':
     game_manager = GameManager()
     game_manager.play_game()
-    print(game_manager.players)

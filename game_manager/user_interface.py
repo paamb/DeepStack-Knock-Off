@@ -7,18 +7,27 @@ class UserInterface():
 
     WHITESPACE = ' ' * 4
 
-    def print_player_row(self, players):
+    def print_player_row(self, players, current_player):
         row_string = ''
+        invisible_characters = 0
 
         for player in players:
             player_string = ''
             for card in player.hand:
                 player_string = player_string + deck_matrix[(card.suit, card.value)] + ' '
             player_string = player_string + ' ' + str(player.chips) + chips
+
+            if not current_player == None and player == current_player:
+                player_string = '\033[1;32m' + player_string + '\033[0m'
+                invisible_characters += 11
+            elif player.is_folded:
+                player_string = '\033[90m' + player_string + '\033[0m'
+                invisible_characters += 9
+
             row_string = row_string + player_string + self.WHITESPACE
         
         print(row_string)
-        return len(row_string)
+        return len(row_string) - invisible_characters
     
     def print_community_row(self, community_cards, row_length):
         estimated_community_cards_length = 14
@@ -28,6 +37,10 @@ class UserInterface():
             base += deck_matrix[(card.suit, card.value)] + ' '
 
         print(base)
+
+    def round_over(self, players, community_cards):
+        self.display_state(players, community_cards)
+        input("ROUND OVER (PRESS ENTER TO CONTINUE)")
 
     def print_pot(self, players, row_length):
         estimated_pot_length = 10
@@ -39,14 +52,17 @@ class UserInterface():
         print(base)
         
 
-    def display_state(self, players, community_cards):
-        players_in_upper_row = players[:len(players)//2 + 1]
-        players_in_lower_row = reversed(players[len(players)//2 + 1:])
-        
+    def display_state(self, players, community_cards, current_player_index=None):
+        players_in_upper_row = players[:len(players)//2]
+        players_in_lower_row = reversed(players[len(players)//2:])
+        if not current_player_index == None:
+            current_player = players[current_player_index]
+        else:
+            current_player = None
         
         print("\033c")
 
-        first_row_length = self.print_player_row(players_in_upper_row)
+        first_row_length = self.print_player_row(players_in_upper_row, current_player)
         print('\n')
 
         self.print_pot(players, first_row_length)
@@ -55,7 +71,7 @@ class UserInterface():
         self.print_community_row(community_cards, first_row_length)
         print('\n')
 
-        self.print_player_row(players_in_lower_row)
+        self.print_player_row(players_in_lower_row, current_player)
         print('\n')
 
 

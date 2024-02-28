@@ -29,6 +29,7 @@ class DeckManager():
 
     # Contains remaining cards in stack
     def shuffle_cards(self):
+        assert len(self.cards) == 52
         random.shuffle(self.cards)
 
     def get_n_cards(self, num_cards):
@@ -40,6 +41,9 @@ class DeckManager():
         self.cards = cards_left
 
         return deal_cards
+
+    def receive_cards(self, cards):
+        self.cards = self.cards + cards
 
 
 if __name__ == '__main__':
