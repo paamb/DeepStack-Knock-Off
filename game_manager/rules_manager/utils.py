@@ -35,6 +35,18 @@ def find_players_with_highest_card_from_single_card(player_and_highest_card_tupl
     return [player for player, card_value in player_and_highest_card_tuples if card_value == highest_value_card]
 
 
+def get_players_with_best_high_card(player_cards: Dict[Player, List[Card]]):
+    # Find highest card for each player
+    player_and_highest_card = find_player_and_highest_card_for_each_player(
+        player_cards)
+
+    # Find players with the highest card
+    players_with_highest_card = find_players_with_highest_card_from_single_card(
+        player_and_highest_card)
+
+    return players_with_highest_card
+
+
 def get_cards_excluding_value(cards: List[Card], value: str) -> List[Card]:
     return [card for card in cards if card_values[card.value] != value]
 

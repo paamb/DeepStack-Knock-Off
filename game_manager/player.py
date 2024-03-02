@@ -27,7 +27,7 @@ class Player():
     def check_or_call(self, current_bet=0):
         if not isinstance(current_bet, int):
             raise ValueError
-        
+
         amount_to_call = current_bet - self.betted_chips
         if self.chips >= amount_to_call:
             self.betted_chips += amount_to_call
@@ -49,12 +49,12 @@ class Player():
             return self.betted_chips
         else:
             return self.all_in()
-    
+
     def all_in(self):
         self.betted_chips += self.chips
         self.chips = 0
         return self.betted_chips
-    
+
     def receive_chips(self, amount):
         self.chips += amount
 
@@ -68,7 +68,7 @@ class Player():
         return hand
 
     def __str__(self):
-        return f"Hand: {self.hand} | Chips: {self.chips}\n"
+        return f"Hand: {self.hand}"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -80,13 +80,14 @@ class HumanPlayer(Player):
     # Action() (Betting. Takes in gamestate)
     def action(self, possible_actions):
 
-        input_to_action = { action[:1]: action for action in possible_actions }
+        input_to_action = {action[:1]: action for action in possible_actions}
 
         for action in possible_actions:
             print(action + f'[{action[:1]}]')
         print('\n')
-        selected_action = input(f'Select action [{list(input_to_action.keys())[0]}]: ')
-        
+        selected_action = input(
+            f'Select action [{list(input_to_action.keys())[0]}]: ')
+
         try:
             return input_to_action[selected_action]
         except:
