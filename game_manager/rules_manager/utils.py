@@ -28,11 +28,25 @@ def get_list_of_card_values(cards: List[Card]):
     return [get_card_int_value(card) for card in cards]
 
 
-def find_players_with_highest_card_from_single_card(player_and_highest_card_tuples: List[Tuple[Player, int]]) -> List[Player]:
+def find_players_with_highest_card_from_single_card(player_and_highest_card_tuples: List[Tuple[Player, int]]) -> Tuple[List[Player], int]:
     # Returns all the players that have the highest card
     highest_value_card = find_highest_card_from_player_card_tuples(
         player_and_highest_card_tuples)
-    return [player for player, card_value in player_and_highest_card_tuples if card_value == highest_value_card]
+    players = [player for player,
+               card_value in player_and_highest_card_tuples if card_value == highest_value_card]
+    return (players, highest_value_card)
+
+
+def get_players_with_best_high_card(player_cards: Dict[Player, List[Card]]):
+    # Find highest card for each player
+    player_and_highest_card = find_player_and_highest_card_for_each_player(
+        player_cards)
+
+    # Find players with the highest card
+    players_with_highest_card = find_players_with_highest_card_from_single_card(
+        player_and_highest_card)
+
+    return players_with_highest_card
 
 
 def get_cards_excluding_value(cards: List[Card], value: str) -> List[Card]:
