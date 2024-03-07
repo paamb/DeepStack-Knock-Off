@@ -24,10 +24,7 @@ class Player():
     def fold(self):
         self.is_folded = True
 
-    def check_or_call(self, current_bet=0):
-        if not isinstance(current_bet, int):
-            raise ValueError
-        
+    def check_or_call(self, current_bet=0):        
         amount_to_call = current_bet - self.betted_chips
         if self.chips >= amount_to_call:
             self.betted_chips += amount_to_call
@@ -37,8 +34,6 @@ class Player():
             self.all_in()
 
     def bet_or_raise(self, current_bet, amount):
-        assert isinstance(amount, int)
-        assert isinstance(current_bet, int)
         assert self.chips > current_bet - self.betted_chips
 
         amount_to_bet = current_bet - self.betted_chips + amount
