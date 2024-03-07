@@ -150,7 +150,7 @@ class RuleManager():
             value_count[card.value] = value_count.get(card.value, 0) + 1
 
         sorted_cards_count = sorted(value_count.items(),
-                                    key=lambda x: x[0], reverse=True)
+                                    key=lambda x: card_values[x[0]], reverse=True)
 
         # Find highest value that is not in n_oak
         high_card = 0
@@ -521,8 +521,3 @@ if __name__ == '__main__':
     community_cards = [card1, card2, card3, card4, card5]
 
     rule_manager = RuleManager()
-
-    # print(rule_manager.get_winner([torstein, paal], community_cards))
-    # rule_manager.player_has_4oak([1, 2, 3, 4, 5, 6, 7])
-
-    # print
