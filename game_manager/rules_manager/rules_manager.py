@@ -283,7 +283,7 @@ class RuleManager():
                     (player, get_list_of_card_values(player_cards[player])))
 
         if len(players_with_flush) == 1:
-            return players_with_flush
+            return players_with_flush[0]
 
         elif len(players_with_flush) > 1:
             players_with_highest_flush = get_players_with_best_high_card_from_tuple(
@@ -294,22 +294,26 @@ class RuleManager():
 
     def check_straight_from_start_card(self, cards: List[Card], min_value: int, max_value: int):
         previous_value = max_value
+        unique_cards_counter = 0
+        straight = False
         for card in cards:
             if card_values[card.value] < previous_value - 1:
                 # Return something indicating that we dont have a straight-flush
                 return False
 
             # Can break if we have reached the min value of the straight
-            if card_values[card.value] == min_value:
+            if card_values[card.value] == min_value and unique_cards_counter == length_of_player_hand:
+                straight = True
                 break
 
+            unique_cards_counter += 1
             previous_value = card_values[card.value]
-        return True
+
+        return straight
 
     def player_has_straight(self, cards: List[Card]):
         # In Texas holdem we will loop over 3 possible straights
-        num_possible_straights = len(cards) - 5 + 1
-
+        num_possible_straights = len(cards) - length_of_player_hand + 1
         for i in range(num_possible_straights):
             max_value = card_values[cards[i].value]
 
@@ -460,7 +464,7 @@ class RuleManager():
     def get_players_with_best_one_pair(self, player_cards):
         players_with_one_pair = self.get_players_with_one_pair(player_cards)
         if len(players_with_one_pair) == 1:
-            return players_with_one_pair
+            return [players_with_one_pair[0]]
 
         elif len(players_with_one_pair) > 1:
             players_with_best_one_pair_and_kicker = self.get_players_with_best_pair_and_kicker(
