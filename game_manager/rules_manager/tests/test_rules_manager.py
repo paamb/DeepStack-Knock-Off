@@ -110,13 +110,13 @@ class TestRulesManager(unittest.TestCase):
     def test_flush(self):
         # Reset community cards for a flush scenario
         self.community_cards = [
-            Card('S', '2'), Card('S', '4'), Card('S', '7'),
+            Card('S', '2'), Card('S', '4'), Card('S', 'K'),
             Card('S', '8'), Card('S', 'J')
         ]
         # Player 1 has two spades, contributing to a flush but with a lower high card within the flush
         self.player1.receive_cards([Card('S', '3'), Card('H', '5')])
         # Player 2 has one spade, contributing to a flush with a higher high card in the community cards
-        self.player2.receive_cards([Card('S', 'K'), Card('H', '3')])
+        self.player2.receive_cards([Card('S', 'Q'), Card('H', '3')])
 
         winners = self.rule_manager.get_winner(
             [self.player1, self.player2], self.community_cards)
