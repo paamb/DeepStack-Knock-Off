@@ -19,8 +19,11 @@ class UserInterface():
                     deck_matrix[(card.suit, card.value)] + ' '
             player_string = player_string + ' ' + str(player.chips) + chips
 
-            if (not current_player == None and player == current_player) or player in winners:
+            if (not current_player == None and player == current_player) and not player in winners:
                 player_string = '\033[1;32m' + player_string + '\033[0m'
+                invisible_characters += 11
+            elif player in winners:
+                player_string = '\033[1;33m' + player_string + '\033[0m'
                 invisible_characters += 11
             elif player.is_folded:
                 player_string = '\033[90m' + player_string + '\033[0m'
