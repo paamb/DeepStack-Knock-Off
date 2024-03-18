@@ -213,13 +213,13 @@ class TestRulesManager(unittest.TestCase):
     def test_one_pair(self):
         # Reset community cards for a One Pair scenario
         self.community_cards = [
-            Card('S', '7'), Card('H', 'T'), Card('D', '5'),
-            Card('C', '2'), Card('S', '9')
+            Card('S', 'K'), Card('H', 'Q'), Card('D', '9'),
+            Card('C', 'Q'), Card('S', '2')
         ]
-        # Player 1 has a card that makes a One Pair with the community cards
-        self.player1.receive_cards([Card('D', '7'), Card('H', '3')])
-        # Player 2 has a One Pair directly in hand, higher than the community cards
-        self.player2.receive_cards([Card('C', 'Q'), Card('D', 'Q')])
+        # Player 1 has a card that contributes to a Two Pair with the community cards
+        self.player1.receive_cards([Card('D', '5'), Card('H', 'T')])
+        # Player 2 has a better Two Pair using one hole card and the community cards
+        self.player2.receive_cards([Card('C', '7'), Card('D', 'J')])
 
         winners = self.rule_manager.get_winner(
             [self.player1, self.player2], self.community_cards)

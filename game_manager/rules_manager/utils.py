@@ -3,6 +3,7 @@ from ..deck_manager import Card
 from ..player import Player
 card_values = {'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
                '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2}
+length_of_player_hand = 5
 
 
 def find_highest_card_from_player_card_tuples(player_and_highest_card_tuples: List[Tuple[Player, int]]) -> int:
