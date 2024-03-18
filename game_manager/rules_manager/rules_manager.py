@@ -53,6 +53,8 @@ class RuleManager():
             return players_with_straight
 
         # check if someone or multiple people have 3 of a kind
+
+        # TODO: Check for 2nd best highcard
         players_with_3oak = self.get_players_with_best_3oak(player_cards)
         if len(players_with_3oak) > 0:
             return players_with_3oak
@@ -64,12 +66,14 @@ class RuleManager():
             return players_with_two_pairs
 
         # # check if someone or multiple people have one pair
+        # TODO: Check for 2nd and 3rd best highcard
         players_with_one_pair = self.get_players_with_best_one_pair(
             player_cards)
         if len(players_with_one_pair) > 0:
             return players_with_one_pair
 
         # # check if someone or multiple people have high card
+        # TODO: Check for 2nd, 3rd and 4th best highcard
         players_with_high_card = self.get_players_with_best_high_card(
             player_cards)
         if len(players_with_high_card) > 0:
@@ -145,7 +149,6 @@ class RuleManager():
 
     def player_has_n_oak(self, cards: List[Card], n: int):
         value_count = {}
-        high_card = 0
         for card in cards:
             value_count[card.value] = value_count.get(card.value, 0) + 1
 
@@ -153,17 +156,24 @@ class RuleManager():
                                     key=lambda x: card_values[x[0]], reverse=True)
 
         # Find highest value that is not in n_oak
-        high_card = 0
+
+        # [('K', 3), ('Q',3), ()]
+        kickers = []
+        total_num_kickers = length_of_player_hand - n
+        num_kickers = 0
         for value, count in sorted_cards_count:
-            if count != n:
-                high_card = card_values[value]
-                break
+            if count != n and num_kickers < total_num_kickers:
+                kickers.append(card_values[value])
+                num_kickers += 1
 
         # Check for n of a kind
+
+        # print("N: ", n, " sorted_cards_count: ",
+            #   sorted_cards_count, "Kickers: ", kickers)
         for value, count in value_count.items():
             if count == n:
-                return (True, card_values[value], high_card)
-        return (False, 0, 0)
+                return (True, card_values[value], kickers)
+        return (False, 0, [])
 
     def player_has_4oak(self, cards):
         # In Texas holdem we will loop over 4 possible 4oak's
@@ -184,25 +194,25 @@ class RuleManager():
     def get_players_with_4oak(self, player_cards: Dict[Player, List[Card]]) -> Tuple[List[Tuple[Player, int, int]]]:
         players_with_4oak = []
         for (player, cards) in player_cards.items():
-            has_4oak, value_of_4oak, value_of_high_card = self.player_has_4oak(
+            has_4oak, value_of_4oak, value_of_kicker = self.player_has_4oak(
                 cards)
             if has_4oak:
                 players_with_4oak.append(
-                    (player, value_of_4oak, value_of_high_card))
+                    (player, value_of_4oak, value_of_kicker[0]))
         return players_with_4oak
 
     def get_players_with_highest_4oak_and_kicker(self, players_with_4oak: List[Tuple[Player, int, int]]) -> List[Player]:
         sorted_players_with_4oak = sorted(
             players_with_4oak, key=lambda x: (x[1], x[2]), reverse=True)
+
+        # Contains 4oak + kicker
         best_4oak = sorted_players_with_4oak[0][1], sorted_players_with_4oak[0][2]
 
+        # Find the players that have the best 4oak and kickers
         best_players = [player_tuple[0] for player_tuple in players_with_4oak if (
             player_tuple[1], player_tuple[2]) == best_4oak]
 
         return best_players
-
-    def create_player_hands_excluding_4oak_cards(self, cards_of_players_with_4oak: Dict[Player, List[Card]], value_of_4oak: int) -> Dict[Player, List[Card]]:
-        return create_player_hands_excluding_value(cards_of_players_with_4oak, value_of_4oak)
 
     def get_players_with_best_4oak_hand(self, player_cards: Dict[Player, List[Card]]):
         players_with_4oak = self.get_players_with_4oak(
@@ -211,54 +221,13 @@ class RuleManager():
             return [players_with_4oak[0][0]]
 
         elif len(players_with_4oak) > 1:
-
             # Checks for the best 4-of-a-kind: List[(Player1, 'K'), (Player2, 'K)]
             players_with_highest_4oak_and_kicker = self.get_players_with_highest_4oak_and_kicker(
                 players_with_4oak)
 
             return players_with_highest_4oak_and_kicker
-
-            # If one player has higher value on the 4 cards in 4-of-a-kind.
-            # This person is the winner
-            if len(players_with_highest_4oak) == 1:
-                return players_with_highest_4oak
-
-            # Find player with best kicker
-            elif len(players_with_highest_4oak) > 1:
-
-                # Add to dictionary only the players with equal 4-of-a-kind
-                cards_of_players_with_4oak = {
-                    player: player_cards[player] for player in players_with_highest_4oak}
-
-                # Find the player with the highest kicker
-                player_cards_excluding_4oak = self.create_player_hands_excluding_4oak_cards(
-                    cards_of_players_with_4oak, value_of_4oak)
-                # Checks for the highest kicker if several players has the same 4-of-a-kind
-                player_and_highest_card_tuple = find_player_and_highest_card_for_each_player(
-                    player_cards_excluding_4oak)
-                player_with_best_kicker, value_of_highest_card = find_players_with_highest_card_from_single_card(
-                    player_and_highest_card_tuple)
-                return player_with_best_kicker
         else:
             return []
-
-    def player_has_3oak(self, cards):
-        # In Texas holdem we will loop over 4 possible 4oak's
-        # If player has 4-of-a-kind the function will return the integer value of the cards in the 4-of-a-kind
-        return self.player_has_n_oak(cards, 3)
-
-    # def get_players_with_3oak(self, player_cards: Dict[Player, List[Card]]) -> Tuple[List[Tuple[Player, str]], str]:
-    #     players_with_3oak = []
-    #     for (player, cards) in player_cards.items():
-    #         has_3oak, value_of_3oak = self.player_has_3oak(cards)
-
-    #         if has_3oak:
-    #             players_with_3oak.append((player, value_of_3oak))
-    #     print("Players with 3oak: ", players_with_3oak)
-    #     return (players_with_3oak, value_of_3oak)
-
-    def create_player_hands_excluding_3oak_cards(self, cards_of_players_with_3oak: Dict[Player, List[Card]], value_of_3oak: int) -> Dict[Player, List[Card]]:
-        return create_player_hands_excluding_value(cards_of_players_with_3oak, value_of_3oak)
 
     def player_has_full_house(self, cards):
         value_count = {}
@@ -372,27 +341,33 @@ class RuleManager():
         else:
             return []
 
-    def get_players_with_highest_3oak(self, players_with_3oak: List[Tuple[Player, int]]) -> Tuple[List[Player], int]:
-        return find_players_with_highest_card_from_single_card(
-            players_with_3oak)
+    def player_has_3oak(self, cards):
+        # In Texas holdem we will loop over 4 possible 4oak's
+        # If player has 4-of-a-kind the function will return the integer value of the cards in the 4-of-a-kind
+        return self.player_has_n_oak(cards, 3)
 
     def get_players_with_3oak(self, player_cards: Dict[Player, List[Card]]) -> Tuple[List[Tuple[Player, str]], str]:
         players_with_3oak = []
         for (player, cards) in player_cards.items():
-            has_3oak, value_of_3oak, value_of_high_card = self.player_has_3oak(
+
+            # Returns value of 3oak and 2 kickers
+            has_3oak, value_of_3oak, value_of_kickers = self.player_has_3oak(
                 cards)
             if has_3oak:
                 players_with_3oak.append(
-                    (player, value_of_3oak, value_of_high_card))
+                    (player, value_of_3oak, value_of_kickers[0], value_of_kickers[1]))
         return players_with_3oak
 
-    def get_players_with_highest_3oak_and_kicker(self, players_with_3oak: List[Tuple[Player, int, int]]) -> List[Player]:
+    def get_players_with_highest_3oak_and_kicker(self, players_with_3oak: List[Tuple[Player, int, int, int]]) -> List[Player]:
         sorted_players_with_3oak = sorted(
-            players_with_3oak, key=lambda x: (x[1], x[2]), reverse=True)
-        best_3oak = sorted_players_with_3oak[0][1], sorted_players_with_3oak[0][2]
+            players_with_3oak, key=lambda x: (x[1], x[2], x[3]), reverse=True)
 
+        # The best 3oak + 2 kickers
+        best_3oak = sorted_players_with_3oak[0][1], sorted_players_with_3oak[0][2], sorted_players_with_3oak[0][3]
+
+        # Find players with best 3oak + 2 kickers
         best_players = [player_tuple[0] for player_tuple in players_with_3oak if (
-            player_tuple[1], player_tuple[2]) == best_3oak]
+            player_tuple[1], player_tuple[2], player_tuple[3]) == best_3oak]
 
         return best_players
 
@@ -428,7 +403,7 @@ class RuleManager():
             return (True, card_values[high_pair], card_values[low_pair], card_values[high_card])
         return (False, 0, 0, 0)
 
-    def get_players_with_best_2oak_and_kicker(self, players_with_2oak: List[Tuple[Player, int, int, int]]) -> List[Player]:
+    def get_players_with_best_two_pairs_and_kicker(self, players_with_2oak: List[Tuple[Player, int, int, int]]) -> List[Player]:
         sorted_players_with_2oak = sorted(
             players_with_2oak, key=lambda x: (x[1], x[2], x[3]), reverse=True)
         best_2oak = sorted_players_with_2oak[0][1], sorted_players_with_2oak[0][2], sorted_players_with_2oak[0][3]
@@ -447,63 +422,72 @@ class RuleManager():
                 players_with_two_pairs.append(
                     (player, high_pair, low_pair, high_card))
 
-        if not players_with_two_pairs:
-            return []
-        elif len(players_with_two_pairs) > 1:
-            players_with_highest_2oak_and_kicker = self.get_players_with_best_2oak_and_kicker(
-                players_with_two_pairs)
+        if len(players_with_two_pairs) == 1:
+            return [players_with_two_pairs[0][0]]
 
+        elif len(players_with_two_pairs) > 1:
+            players_with_highest_2oak_and_kicker = self.get_players_with_best_two_pairs_and_kicker(
+                players_with_two_pairs)
             return players_with_highest_2oak_and_kicker
+
         else:
             return []
 
-    def player_has_one_pair(self, cards):
-        value_count = {}
-        high_card = 0
-        for card in cards:
-            value_count[card.value] = value_count.get(card.value, 0) + 1
-
-        # Sort first on looking at 2nd element
-        sorted_cards_count = sorted(value_count.items(),
-                                    key=lambda x: (x[1], card_values[x[0]]), reverse=True)
-        if sorted_cards_count[0][1] == 2:
-            pair = sorted_cards_count[0][0]
-            high_card = sorted_cards_count[1][0]
-            return (True, card_values[pair], card_values[high_card])
-        return (False, 0, 0)
-
-    def get_players_with_best_pair_and_kicker(self, players_with_2oak: List[Tuple[Player, int, int]]) -> List[Player]:
+    def get_players_with_best_pair_and_kicker(self, players_with_2oak: List[Tuple[Player, int, int, int, int]]) -> List[Player]:
         sorted_players_with_2oak = sorted(
-            players_with_2oak, key=lambda x: (x[1], x[2]), reverse=True)
-        best_pair_hand = sorted_players_with_2oak[0][1], sorted_players_with_2oak[0][2]
+            players_with_2oak, key=lambda x: (x[1], x[2], x[3], x[4]), reverse=True)
+
+        # Best pair with 3 kickers
+        best_pair_hand = sorted_players_with_2oak[0][1], sorted_players_with_2oak[
+            0][2], sorted_players_with_2oak[0][3], sorted_players_with_2oak[0][4]
+
+        # Find best player with best hand
         best_players = [player_tuple[0] for player_tuple in players_with_2oak if (
-            player_tuple[1], player_tuple[2]) == best_pair_hand]
+            player_tuple[1], player_tuple[2], player_tuple[3], player_tuple[4]) == best_pair_hand]
 
         return best_players
 
-    def get_players_with_best_one_pair(self, player_cards):
-        players_with_one_pairs = []
+    def player_has_one_pair(self, cards):
+        return self.player_has_n_oak(cards, 2)
+
+    def get_players_with_one_pair(self, player_cards):
+        players_with_one_pair = []
         for (player, cards) in player_cards.items():
-            has_one_pair, pair, high_card = self.player_has_one_pair(
+            has_one_pair, value_of_pair,  value_of_kickers = self.player_has_one_pair(
                 cards)
             if has_one_pair:
-                players_with_one_pairs.append(
-                    (player, pair, high_card))
+                players_with_one_pair.append(
+                    (player, value_of_pair, value_of_kickers[0], value_of_kickers[1], value_of_kickers[2]))
 
-        if not players_with_one_pairs:
-            return []
-        elif len(players_with_one_pairs) > 1:
-            players_with_highest_2oak_and_kicker = self.get_players_with_best_pair_and_kicker(
-                players_with_one_pairs)
+        return players_with_one_pair
 
-            return players_with_highest_2oak_and_kicker
+    def get_players_with_best_one_pair(self, player_cards):
+        players_with_one_pair = self.get_players_with_one_pair(player_cards)
+        if len(players_with_one_pair) == 1:
+            return players_with_one_pair
+
+        elif len(players_with_one_pair) > 1:
+            players_with_best_one_pair_and_kicker = self.get_players_with_best_pair_and_kicker(
+                players_with_one_pair)
+            return players_with_best_one_pair_and_kicker
+
         else:
             return []
 
     def get_players_with_best_high_card(self, player_cards):
-        players_with_highest_card, card_value = get_players_with_best_high_card(
-            player_cards)
-        return players_with_highest_card
+        player_cards_tuples = [(player, get_list_of_card_values(cards))
+                               for player, cards in player_cards.items()]
+        sorted_players_by_highest_hand = sorted(
+            player_cards_tuples, key=lambda x: (x[1][1], x[1][2], x[1][3], x[1][4], x[1][5]), reverse=True)
+
+        # # Best pair with 3 kickers
+        best_pair_hand = sorted_players_by_highest_hand[0][1]
+
+        # Find best player with best hand
+        best_players = [player_cards_tuple[0] for player_cards_tuple in player_cards_tuples if (
+            player_cards_tuple[1]) == best_pair_hand]
+
+        return best_players
 
 
 if __name__ == '__main__':
