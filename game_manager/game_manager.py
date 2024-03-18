@@ -18,10 +18,10 @@ class RoundManager:
         self.game_manager = game_manager
         self.community_cards = []
         self.burnt_cards = []
+        self.starting_player_index = 0
         self.initialize_round()
 
     def initialize_round(self):
-        self.starting_player_index = 0
         self.current_bet = 0
 
         self.collect_cards()
@@ -65,17 +65,17 @@ class RoundManager:
                 self.game_manager.user_interface.display_state(
                     self.game_manager.players, self.community_cards, current_player_index)
                 # this is where the action from a player is requested and performed
-                action = player.action(self.get_possible_actions())
-                action_bet = self.game_manager.action_manager.perform_action(
+                action = player.action(self.get_possible_actions(player))
+                action_bet, update_starting_index = self.game_manager.action_manager.perform_action(
                     player, action, self.current_bet)
                 if action_bet > self.current_bet:
                     self.current_bet = action_bet
+                if update_starting_index:
+                    self.starting_player_index = current_player_index
             current_player_index = current_player_index + 1
             if current_player_index == len(self.game_manager.players):
                 current_player_index = 0
             number_of_actions = number_of_actions + 1
-
-        self.set_starting_player_index()
 
     def round_is_over(self, number_of_actions):
         if number_of_actions < len(self.game_manager.players):
@@ -89,14 +89,15 @@ class RoundManager:
         return True
 
     def set_starting_player_index(self):
-        # TODO: set accurate startingg player index
+        # TODO: set accurate starting player index
         self.starting_player_index = self.starting_player_index + 1
         if self.starting_player_index == len(self.game_manager.players):
             self.starting_player_index = 0
 
-    def get_possible_actions(self):
+    def get_possible_actions(self, player):
         # TODO: calculate possible actions
-        return self.game_manager.action_manager.POSSIBLE_ACTIONS
+        
+        return self.game_manager.action_manager.get_possible_actions(player, self.current_bet)
 
     def reset_round_manager(self):
         self.current_bet = 0
@@ -117,23 +118,34 @@ class ActionManager():
     def __init__(self):
         pass
 
-    def get_possible_actions(self, player, current_bet: int = 0):
-        pass
+    def get_possible_actions(self, player, current_bet: int = 0, big_blind: int = 2):
+        possible_actions = []
+        if player.chips + player.betted_chips > current_bet:
+            possible_actions.append('CHECK/CALL')
+        if player.chips + player.betted_chips > current_bet + big_blind:
+            possible_actions.append('BET/RAISE')
+        possible_actions = possible_actions + ['FOLD', 'ALL-IN']
+
+        return possible_actions
 
     def perform_action(self, player: Player, action: str, current_bet: int = 0, big_blind: int = 2):
         if not action in self.POSSIBLE_ACTIONS:
             raise ValueError
 
+        update_starting_index = False
         if action == 'FOLD':
             player.fold()
         if action == 'CHECK/CALL':
             player.check_or_call(current_bet)
         if action == 'BET/RAISE':
             current_bet = player.bet_or_raise(current_bet, big_blind)
+            update_starting_index = True
         if action == 'ALL-IN':
+            if player.chips + player.betted_chips > current_bet:
+                update_starting_index = True
             current_bet = player.all_in()
 
-        return current_bet
+        return current_bet, update_starting_index
 
 
 class TexasHoldemRoundManager(RoundManager):
@@ -162,15 +174,16 @@ class TexasHoldemRoundManager(RoundManager):
 
         self.finalize_round()
 
+        self.set_starting_player_index()
+
     def finalize_round(self):
         # show cards
 
-        self.game_manager.user_interface.round_over(self.game_manager.players, self.community_cards)
         winners = self.game_manager.rule_manager.get_winner(self.remaining_players(), self.community_cards)
+        self.game_manager.user_interface.round_over(self.game_manager.players, self.community_cards, winners)
         total_pot = self.total_pot()
-        print(winners)
         for player in winners:
-            player.receive_chips(total_pot // len(winners))
+            player.receive_chips(total_pot /     len(winners))
         
         for player in self.game_manager.players:
             player.round_ended()

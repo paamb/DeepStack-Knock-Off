@@ -8,7 +8,7 @@ class UserInterface():
 
     WHITESPACE = ' ' * 4
 
-    def print_player_row(self, players, current_player):
+    def print_player_row(self, players, current_player, winners):
         row_string = ''
         invisible_characters = 0
 
@@ -19,7 +19,7 @@ class UserInterface():
                     deck_matrix[(card.suit, card.value)] + ' '
             player_string = player_string + ' ' + str(player.chips) + chips
 
-            if not current_player == None and player == current_player:
+            if (not current_player == None and player == current_player) or player in winners:
                 player_string = '\033[1;32m' + player_string + '\033[0m'
                 invisible_characters += 11
             elif player.is_folded:
@@ -40,8 +40,8 @@ class UserInterface():
 
         print(base)
 
-    def round_over(self, players, community_cards):
-        self.display_state(players, community_cards)
+    def round_over(self, players, community_cards, winners):
+        self.display_state(players, community_cards, winners=winners)
         input("ROUND OVER (PRESS ENTER TO CONTINUE)")
 
     def print_pot(self, players, row_length):
@@ -53,7 +53,7 @@ class UserInterface():
         base += str(pot) + chips
         print(base)
 
-    def display_state(self, players, community_cards, current_player_index=None):
+    def display_state(self, players, community_cards, current_player_index=None, winners=[]):
         players_in_upper_row = players[:len(players)//2]
         players_in_lower_row = reversed(players[len(players)//2:])
         if not current_player_index == None:
@@ -63,7 +63,7 @@ class UserInterface():
         
         print("\033c")
 
-        first_row_length = self.print_player_row(players_in_upper_row, current_player)
+        first_row_length = self.print_player_row(players_in_upper_row, current_player, winners)
         print('\n')
 
         self.print_pot(players, first_row_length)
@@ -72,7 +72,7 @@ class UserInterface():
         self.print_community_row(community_cards, first_row_length)
         print('\n')
 
-        self.print_player_row(players_in_lower_row, current_player)
+        self.print_player_row(players_in_lower_row, current_player, winners)
         print('\n')
 
 
