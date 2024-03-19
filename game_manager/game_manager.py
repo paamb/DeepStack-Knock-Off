@@ -54,6 +54,9 @@ class RoundManager:
 
     def remaining_players(self):
         return list(filter(lambda player: not player.is_folded, self.game_manager.players))
+    
+    def players_with_betted_chips(self):
+        return list(filter(lambda player: player.betted_chips > 0, self.game_manager.players))
 
     def round_of_actions(self):
         # a round continues until everyone have had a turn, and everyone have bet the same amount (or all in)
@@ -118,7 +121,7 @@ class ActionManager():
     def __init__(self):
         pass
 
-    def get_possible_actions(self, player, current_bet: int = 0, big_blind: int = 2):
+    def get_possible_actions(self, player, current_bet: int = 0, big_blind: int = 5):
         possible_actions = []
         if player.chips + player.betted_chips > current_bet:
             possible_actions.append('CHECK/CALL')
@@ -128,7 +131,7 @@ class ActionManager():
 
         return possible_actions
 
-    def perform_action(self, player: Player, action: str, current_bet: int = 0, big_blind: int = 2):
+    def perform_action(self, player: Player, action: str, current_bet: int = 0, big_blind: int = 5):
         if not action in self.POSSIBLE_ACTIONS:
             raise ValueError
 
@@ -181,16 +184,60 @@ class TexasHoldemRoundManager(RoundManager):
 
         winners = self.game_manager.rule_manager.get_winner(self.remaining_players(), self.community_cards)
         self.game_manager.user_interface.round_over(self.game_manager.players, self.community_cards, winners)
-        total_pot = self.total_pot()
-        for player in winners:
-            player.receive_chips(total_pot /     len(winners))
+        self.game_manager.pot_manager.distribute_pot(self.players_with_betted_chips(), winners)
         
         for player in self.game_manager.players:
             player.round_ended()
 
+class PotManager():
+    # self.subpots contains the pot as a subpot with all the players contributing, in addition to all eventual subpots.
+    # this is the actual money to be distributed
+
+    def __init__(self):
+        pass
+
+    def distribute_pot(self, all_players, winners):
+        subpots = self.create_subpots(all_players) # items: (subpot_total, [...players_contributed_to_subpot])
+
+        for (subpot_total, contributing_players) in subpots:
+            # winners of subpot is the intersection of all the winners and the contributors to the subpot
+            contributing_winners = list(set(contributing_players) & set(winners))
+            if len(contributing_winners) == 0:
+                # no winners in subpot => subpot is going back to its contributors
+                self.distribute_subpot_to_players(subpot_total, contributing_players)
+            else:
+                # subpot is distributed to the winners of its contributors
+                self.distribute_subpot_to_players(subpot_total, contributing_winners)
+
+    def distribute_subpot_to_players(self, subpot_total, receiving_players):
+        chips_to_each = subpot_total / len(receiving_players)
+        for player in receiving_players:
+            player.receive_chips(chips_to_each)
 
 
+    def create_subpots(self, all_players):
+        subpots = [] # items: (subpot_total, [...players_contributed_to_subpot])
+        all_players_sorted = sorted(all_players, key=lambda player: player.betted_chips)
 
+        # create subpots, keeping track of its contributors
+        for i in range(len(all_players_sorted)):
+            player = all_players_sorted[i]
+            # if the player has 0 chips, no new subpot needs to be made
+            if player.betted_chips == 0:
+                continue
+
+            subpot_total = player.betted_chips * (len(all_players_sorted) - i)
+            # removing the amount from each player that have somthing left
+            # since we always handle the player with the least betted chips first, the players to the right will never have betted less than this
+            chips_to_subtract = player.betted_chips
+            for j in range(i, len(all_players_sorted)):
+                all_players_sorted[j].betted_chips = all_players_sorted[j].betted_chips - chips_to_subtract
+
+            contributing_players = all_players_sorted[i:]
+
+            subpots.append((subpot_total, contributing_players))
+
+        return subpots
 
 class GameManager:
     """
@@ -205,6 +252,10 @@ class GameManager:
         self.set_rule_manager()
         self.set_user_interface()
         self.set_action_manager()
+        self.set_pot_manager()
+
+    def set_pot_manager(self):
+        self.pot_manager = PotManager()
 
     def set_rule_manager(self):
         self.rule_manager = RuleManager()

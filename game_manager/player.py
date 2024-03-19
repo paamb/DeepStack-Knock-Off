@@ -8,9 +8,9 @@ class Player():
     # CardContainer
     # Chips
 
-    def __init__(self) -> None:
+    def __init__(self, chips=piv.starting_chips_per_player) -> None:
         self.hand = []
-        self.chips = piv.starting_chips_per_player
+        self.chips = chips
         self.betted_chips = 0
         self.is_folded = False
         pass

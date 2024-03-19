@@ -9,6 +9,7 @@ run:
 test:
 	@echo "Testing rules manager..."
 	python3 -m game_manager.rules_manager.tests.test_rules_manager
+	python3 -m game_manager.test_game_manager
 
 # Helper target for cleaning up any generated files, if necessary
 clean:
