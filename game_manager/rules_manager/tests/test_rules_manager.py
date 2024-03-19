@@ -35,24 +35,23 @@ class TestRulesManager(unittest.TestCase):
     def test_straight_flush(self):
         # Reset community cards for a straight flush scenario
         self.community_cards = [
-            Card('S', '3'), Card('S', '4'),
-            Card('S', '5'), Card('S', '6'), Card('S', '7')
+            Card('S', '2'), Card('S', '3'),
+            Card('S', '4'), Card('C', '5'), Card('S', 'J')
         ]
         # Assuring a Straight Flush
-        self.player1.receive_cards([Card('S', '7'), Card('S', '8')])
-        self.player2.receive_cards([Card('S', '8'), Card('S', '9')])
+        self.player1.receive_cards([Card('S', '5'), Card('S', '6')])
+        self.player2.receive_cards([Card('S', 'A'), Card('S', '8')])
         winners = self.rule_manager.get_winner(
             [self.player1, self.player2], self.community_cards)
         # Player 2 should be winning with higher straight flush
-        self.assertNotIn(self.player1, winners)
-        self.assertIn(self.player2, winners)
+        self.assertNotIn(self.player2, winners)
+        self.assertIn(self.player1, winners)
 
         player_cards = self.rule_manager.create_player_card_dictionary(
             [self.player1, self.player2], self.community_cards)
 
         best_straight_flush = self.rule_manager.get_players_with_best_straight_flush(
             player_cards)
-
         self.assertEqual(winners, best_straight_flush)
 
     def test_four_of_a_kind(self):
@@ -136,13 +135,13 @@ class TestRulesManager(unittest.TestCase):
     def test_straight(self):
         # Reset community cards for a straight scenario
         self.community_cards = [
-            Card('S', '5'), Card('H', '4'), Card('D', '3'),
-            Card('C', '2'), Card('S', 'K')
+            Card('S', '3'), Card('H', '4'),
+            Card('D', '4'), Card('D', '5'), Card('S', '6')
         ]
         # Player 1 has cards that do not contribute to a straight
-        self.player1.receive_cards([Card('S', '4'), Card('H', '6')])
+        self.player1.receive_cards([Card('S', '7'), Card('H', '6')])
         # Player 2 has cards that also do not contribute to the straight
-        self.player2.receive_cards([Card('C', 'Q'), Card('D', 'Q')])
+        self.player2.receive_cards([Card('C', 'A'), Card('D', 'K')])
 
         winners = self.rule_manager.get_winner(
             [self.player1, self.player2], self.community_cards)

@@ -82,24 +82,30 @@ class RuleManager():
 
     def check_straight_flush_from_start_card(self, cards: List[Card], min_value: int, max_value: int):
         previous_value = max_value
-
+        unique_cards_counter = 1
+        straight = False
         suit_count = {}
         for card in (cards):
             if card_values[card.value] < previous_value - 1:
                 # Return something indicating that we dont have a straight-flush
                 return False
 
-            # Count the suit to check if we have flush
+            if card_values[card.value] != previous_value:
+                unique_cards_counter += 1
+
+            # Increment count suits
             suit_count[card.suit] = suit_count.get(card.suit, 0) + 1
 
             # Can break if we have reached the min value of the straight
-            if card_values[card.value] == min_value:
+            if card_values[card.value] == min_value and unique_cards_counter == length_of_player_hand:
+                straight = True
                 break
 
+            # Count the suit to check if we have flush
             previous_value = card_values[card.value]
 
         # Check if we have 5 the same suit
-        return any(count >= 5 for count in suit_count.values())
+        return straight and any(count >= 5 for count in suit_count.values())
 
     # EVALUATION FUNCTIONS ### metode: returner nøkkelverdier for hvevr hånd for senere sammenligning
 
@@ -118,7 +124,7 @@ class RuleManager():
 
     def player_has_straight_flush(self, cards: List[Card]):
         # In Texas holdem we will loop over 3 possible straights
-        num_possible_straights = len(cards) - 5 + 1
+        num_possible_straights = len(cards) - length_of_player_hand + 1
 
         for i in range(num_possible_straights):
             max_value = card_values[cards[i].value]
@@ -167,9 +173,6 @@ class RuleManager():
                 num_kickers += 1
 
         # Check for n of a kind
-
-        # print("N: ", n, " sorted_cards_count: ",
-            #   sorted_cards_count, "Kickers: ", kickers)
         for value, count in value_count.items():
             if count == n:
                 return (True, card_values[value], kickers)
@@ -294,19 +297,20 @@ class RuleManager():
 
     def check_straight_from_start_card(self, cards: List[Card], min_value: int, max_value: int):
         previous_value = max_value
-        unique_cards_counter = 0
+        unique_cards_counter = 1
         straight = False
         for card in cards:
             if card_values[card.value] < previous_value - 1:
                 # Return something indicating that we dont have a straight-flush
                 return False
 
+            if card_values[card.value] != previous_value:
+                unique_cards_counter += 1
             # Can break if we have reached the min value of the straight
             if card_values[card.value] == min_value and unique_cards_counter == length_of_player_hand:
                 straight = True
                 break
 
-            unique_cards_counter += 1
             previous_value = card_values[card.value]
 
         return straight
