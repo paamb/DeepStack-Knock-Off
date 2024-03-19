@@ -110,13 +110,13 @@ class TestRulesManager(unittest.TestCase):
     def test_flush(self):
         # Reset community cards for a flush scenario
         self.community_cards = [
-            Card('S', '2'), Card('S', '4'), Card('S', '7'),
+            Card('S', '2'), Card('S', '4'), Card('S', 'K'),
             Card('S', '8'), Card('S', 'J')
         ]
         # Player 1 has two spades, contributing to a flush but with a lower high card within the flush
         self.player1.receive_cards([Card('S', '3'), Card('H', '5')])
         # Player 2 has one spade, contributing to a flush with a higher high card in the community cards
-        self.player2.receive_cards([Card('S', 'K'), Card('H', '3')])
+        self.player2.receive_cards([Card('S', 'Q'), Card('H', '3')])
 
         winners = self.rule_manager.get_winner(
             [self.player1, self.player2], self.community_cards)
@@ -136,20 +136,20 @@ class TestRulesManager(unittest.TestCase):
     def test_straight(self):
         # Reset community cards for a straight scenario
         self.community_cards = [
-            Card('S', '5'), Card('H', '6'), Card('D', '7'),
-            Card('C', '8'), Card('S', '9')
+            Card('S', '5'), Card('H', '4'), Card('D', '3'),
+            Card('C', '2'), Card('S', 'K')
         ]
         # Player 1 has cards that do not contribute to a straight
-        self.player1.receive_cards([Card('S', '2'), Card('H', '3')])
+        self.player1.receive_cards([Card('S', '4'), Card('H', '6')])
         # Player 2 has cards that also do not contribute to the straight
-        self.player2.receive_cards([Card('C', '2'), Card('D', '4')])
+        self.player2.receive_cards([Card('C', 'Q'), Card('D', 'Q')])
 
         winners = self.rule_manager.get_winner(
             [self.player1, self.player2], self.community_cards)
 
         # Both players should tie with the straight on the board
         self.assertIn(self.player1, winners)
-        self.assertIn(self.player2, winners)
+        self.assertNotIn(self.player2, winners)
 
         # Checking if the players actually win on flush
         player_cards = self.rule_manager.create_player_card_dictionary(
@@ -264,4 +264,4 @@ class TestRulesManager(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-    # unittest.TestCase('test_three_of_a_kind')
+    # unittest.TestCase("test_straight")

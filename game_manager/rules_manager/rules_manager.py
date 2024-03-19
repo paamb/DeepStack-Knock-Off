@@ -271,26 +271,22 @@ class RuleManager():
             # Count the suit to check if we have flush
             suit_count[card.suit] = suit_count.get(card.suit, 0) + 1
         # Check if we have 5 the same suit
-        for suit, count in suit_count.items():
-            if count >= 5:
-                cards_of_flush_suit = [
-                    card for card in cards if card.suit == suit]
-                highest_card_in_suit = max(
-                    cards_of_flush_suit, key=lambda x: x.value)
-                return (True, get_card_int_value(highest_card_in_suit))
-        return (False, 0)
+        return any(count >= 5 for count in suit_count.values())
 
     def get_players_with_best_flush(self, player_cards):
         players_with_flush = []
         for (player, cards) in player_cards.items():
-            has_straight, highest_card_in_flush = self.player_has_flush(
+            has_straight = self.player_has_flush(
                 cards)
             if has_straight:
                 players_with_flush.append(
-                    (player, highest_card_in_flush))
+                    (player, get_list_of_card_values(player_cards[player])))
 
-        if len(players_with_flush) > 0:
-            players_with_highest_flush, value_of_highest_card = find_players_with_highest_card_from_single_card(
+        if len(players_with_flush) == 1:
+            return players_with_flush[0]
+
+        elif len(players_with_flush) > 1:
+            players_with_highest_flush = get_players_with_best_high_card_from_tuple(
                 players_with_flush)
             return players_with_highest_flush
         else:
@@ -298,22 +294,26 @@ class RuleManager():
 
     def check_straight_from_start_card(self, cards: List[Card], min_value: int, max_value: int):
         previous_value = max_value
+        unique_cards_counter = 0
+        straight = False
         for card in cards:
             if card_values[card.value] < previous_value - 1:
                 # Return something indicating that we dont have a straight-flush
                 return False
 
             # Can break if we have reached the min value of the straight
-            if card_values[card.value] == min_value:
+            if card_values[card.value] == min_value and unique_cards_counter == length_of_player_hand:
+                straight = True
                 break
 
+            unique_cards_counter += 1
             previous_value = card_values[card.value]
-        return True
+
+        return straight
 
     def player_has_straight(self, cards: List[Card]):
         # In Texas holdem we will loop over 3 possible straights
-        num_possible_straights = len(cards) - 5 + 1
-
+        num_possible_straights = len(cards) - length_of_player_hand + 1
         for i in range(num_possible_straights):
             max_value = card_values[cards[i].value]
 
@@ -464,7 +464,7 @@ class RuleManager():
     def get_players_with_best_one_pair(self, player_cards):
         players_with_one_pair = self.get_players_with_one_pair(player_cards)
         if len(players_with_one_pair) == 1:
-            return players_with_one_pair
+            return [players_with_one_pair[0]]
 
         elif len(players_with_one_pair) > 1:
             players_with_best_one_pair_and_kicker = self.get_players_with_best_pair_and_kicker(
@@ -477,15 +477,8 @@ class RuleManager():
     def get_players_with_best_high_card(self, player_cards):
         player_cards_tuples = [(player, get_list_of_card_values(cards))
                                for player, cards in player_cards.items()]
-        sorted_players_by_highest_hand = sorted(
-            player_cards_tuples, key=lambda x: (x[1][1], x[1][2], x[1][3], x[1][4], x[1][5]), reverse=True)
-
-        # # Best pair with 3 kickers
-        best_pair_hand = sorted_players_by_highest_hand[0][1]
-
-        # Find best player with best hand
-        best_players = [player_cards_tuple[0] for player_cards_tuple in player_cards_tuples if (
-            player_cards_tuple[1]) == best_pair_hand]
+        best_players = get_players_with_best_high_card_from_tuple(
+            player_cards_tuples)
 
         return best_players
 

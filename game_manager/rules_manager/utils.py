@@ -29,6 +29,20 @@ def get_list_of_card_values(cards: List[Card]):
     return [get_card_int_value(card) for card in cards]
 
 
+def get_players_with_best_high_card_from_tuple(player_cards_tuples):
+    sorted_players_by_highest_hand = sorted(
+        player_cards_tuples, key=lambda x: (x[1][1], x[1][2], x[1][3], x[1][4], x[1][5]), reverse=True)
+
+    # # Best pair with 3 kickers
+    best_pair_hand = sorted_players_by_highest_hand[0][1]
+
+    # Find best player with best hand
+    best_players = [player_cards_tuple[0] for player_cards_tuple in player_cards_tuples if (
+        player_cards_tuple[1]) == best_pair_hand]
+
+    return best_players
+
+
 def find_players_with_highest_card_from_single_card(player_and_highest_card_tuples: List[Tuple[Player, int]]) -> Tuple[List[Player], int]:
     # Returns all the players that have the highest card
     highest_value_card = find_highest_card_from_player_card_tuples(
