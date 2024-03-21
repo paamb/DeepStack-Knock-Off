@@ -286,7 +286,7 @@ class RuleManager():
                     (player, get_list_of_card_values(player_cards[player])))
 
         if len(players_with_flush) == 1:
-            return players_with_flush[0]
+            return [players_with_flush[0][0]]
 
         elif len(players_with_flush) > 1:
             players_with_highest_flush = get_players_with_best_high_card_from_tuple(
@@ -468,7 +468,7 @@ class RuleManager():
     def get_players_with_best_one_pair(self, player_cards):
         players_with_one_pair = self.get_players_with_one_pair(player_cards)
         if len(players_with_one_pair) == 1:
-            return [players_with_one_pair[0]]
+            return [players_with_one_pair[0][0]]
 
         elif len(players_with_one_pair) > 1:
             players_with_best_one_pair_and_kicker = self.get_players_with_best_pair_and_kicker(
