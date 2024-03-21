@@ -111,39 +111,33 @@ class RoundManager:
 
 
 class ActionManager():
-    POSSIBLE_ACTIONS = [
-        'CHECK/CALL',
-        'FOLD',
-        'BET/RAISE',
-        'ALL-IN'
-    ]
 
     def __init__(self):
         pass
 
-    def get_possible_actions(self, player, current_bet: int = 0, big_blind: int = 5):
+    def get_possible_actions(self, player, current_bet: int = 0, raise_amount: int = 2 * piv.small_blind):
         possible_actions = []
         if player.chips + player.betted_chips > current_bet:
-            possible_actions.append('CHECK/CALL')
-        if player.chips + player.betted_chips > current_bet + big_blind:
-            possible_actions.append('BET/RAISE')
-        possible_actions = possible_actions + ['FOLD', 'ALL-IN']
+            possible_actions.append(f'CHECK/CALL ({current_bet}$) ')
+        if player.chips + player.betted_chips > current_bet + raise_amount:
+            possible_actions.append(f'BET/RAISE ({current_bet + raise_amount}$) ')
+        possible_actions = possible_actions + ['FOLD ', 'ALL-IN ']
 
         return possible_actions
 
-    def perform_action(self, player: Player, action: str, current_bet: int = 0, big_blind: int = 5):
-        if not action in self.POSSIBLE_ACTIONS:
+    def perform_action(self, player: Player, action: str, current_bet: int = 0, bet: int = 2 * piv.small_blind):
+        if not action in self.get_possible_actions(player, current_bet, bet):
             raise ValueError
 
         update_starting_index = False
-        if action == 'FOLD':
+        if 'FOLD' in action:
             player.fold()
-        if action == 'CHECK/CALL':
+        if 'CHECK/CALL' in action:
             player.check_or_call(current_bet)
-        if action == 'BET/RAISE':
-            current_bet = player.bet_or_raise(current_bet, big_blind)
+        if 'BET/RAISE' in action:
+            current_bet = player.bet_or_raise(current_bet, bet)
             update_starting_index = True
-        if action == 'ALL-IN':
+        if 'ALL-IN' in action:
             if player.chips + player.betted_chips > current_bet:
                 update_starting_index = True
             current_bet = player.all_in()
