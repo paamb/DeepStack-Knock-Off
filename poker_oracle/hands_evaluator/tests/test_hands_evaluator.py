@@ -1,11 +1,11 @@
 import unittest
-from ..rules_manager import RuleManager, Player, Card
+from poker_oracle.hands_evaluator.hands_evaluator import HandsEvaluator, Player, Card
 
 
 class TestRulesManager(unittest.TestCase):
     def setUp(self):
         # This runs before each test method
-        self.rule_manager = RuleManager()
+        self.hands_evaluator = HandsEvaluator()
         self.community_cards = [
             Card('S', 'T'), Card('S', 'J'), Card('S', 'Q'),
             # Community cards for Royal Flush test
@@ -18,16 +18,16 @@ class TestRulesManager(unittest.TestCase):
         self.player1.receive_cards([Card('S', '3'), Card('S', '8')])
         # Assuring a Royal Flush with community cards
         self.player2.receive_cards([Card('S', 'A'), Card('S', 'K')])
-        winners = self.rule_manager.get_winner(
+        winners = self.hands_evaluator.get_winner(
             [self.player1, self.player2], self.community_cards)
         # Player 1 should be winning with royal flush
         self.assertIn(self.player2, winners)
         self.assertNotIn(self.player1, winners)
 
-        player_cards = self.rule_manager.create_player_card_dictionary(
+        player_cards = self.hands_evaluator.create_player_card_dictionary(
             [self.player1, self.player2], self.community_cards)
 
-        royal_flush = self.rule_manager.get_players_with_royal_flush(
+        royal_flush = self.hands_evaluator.get_players_with_royal_flush(
             player_cards)
 
         self.assertEqual(winners, royal_flush)
@@ -41,16 +41,16 @@ class TestRulesManager(unittest.TestCase):
         # Assuring a Straight Flush
         self.player1.receive_cards([Card('S', '5'), Card('S', '6')])
         self.player2.receive_cards([Card('S', 'A'), Card('S', '8')])
-        winners = self.rule_manager.get_winner(
+        winners = self.hands_evaluator.get_winner(
             [self.player1, self.player2], self.community_cards)
         # Player 2 should be winning with higher straight flush
         self.assertNotIn(self.player2, winners)
         self.assertIn(self.player1, winners)
 
-        player_cards = self.rule_manager.create_player_card_dictionary(
+        player_cards = self.hands_evaluator.create_player_card_dictionary(
             [self.player1, self.player2], self.community_cards)
 
-        best_straight_flush = self.rule_manager.get_players_with_best_straight_flush(
+        best_straight_flush = self.hands_evaluator.get_players_with_best_straight_flush(
             player_cards)
         self.assertEqual(winners, best_straight_flush)
 
@@ -63,17 +63,17 @@ class TestRulesManager(unittest.TestCase):
         self.player1.receive_cards([Card('S', '2'), Card('S', '3')])
         # Assuring a win with higher kicker
         self.player2.receive_cards([Card('S', '4'), Card('S', '8')])
-        winners = self.rule_manager.get_winner(
+        winners = self.hands_evaluator.get_winner(
             [self.player1, self.player2], self.community_cards)
         # Player 2 should be winning with higher kicker
         self.assertIn(self.player2, winners)
         self.assertNotIn(self.player1, winners)
 
         # Checking if the players actually win on 4oak
-        player_cards = self.rule_manager.create_player_card_dictionary(
+        player_cards = self.hands_evaluator.create_player_card_dictionary(
             [self.player1, self.player2], self.community_cards)
 
-        best_4oak = self.rule_manager.get_players_with_best_4oak_hand(
+        best_4oak = self.hands_evaluator.get_players_with_best_4oak_hand(
             player_cards)
 
         self.assertEqual(winners, best_4oak)
@@ -89,7 +89,7 @@ class TestRulesManager(unittest.TestCase):
         # Player 2 also receives a full house, but lower, 2s over 5s
         self.player2.receive_cards([Card('S', '2'), Card('S', '5')])
 
-        winners = self.rule_manager.get_winner(
+        winners = self.hands_evaluator.get_winner(
             [self.player1, self.player2], self.community_cards)
 
         # Player 1 should be winning with a higher full house (9s over 2s)
@@ -98,10 +98,10 @@ class TestRulesManager(unittest.TestCase):
         self.assertNotIn(self.player2, winners)
 
         # Checking if the players actually win on full_house
-        player_cards = self.rule_manager.create_player_card_dictionary(
+        player_cards = self.hands_evaluator.create_player_card_dictionary(
             [self.player1, self.player2], self.community_cards)
 
-        best_full_house = self.rule_manager.get_players_with_best_full_house(
+        best_full_house = self.hands_evaluator.get_players_with_best_full_house(
             player_cards)
 
         self.assertEqual(winners, best_full_house)
@@ -117,17 +117,17 @@ class TestRulesManager(unittest.TestCase):
         # Player 2 has one spade, contributing to a flush with a higher high card in the community cards
         self.player2.receive_cards([Card('S', 'Q'), Card('H', '3')])
 
-        winners = self.rule_manager.get_winner(
+        winners = self.hands_evaluator.get_winner(
             [self.player1, self.player2], self.community_cards)
         # Player 2 should be winning with a flush that uses the high card 'J' from the community cards
         self.assertIn(self.player2, winners)
         self.assertNotIn(self.player1, winners)
 
         # Checking if the players actually win on flush
-        player_cards = self.rule_manager.create_player_card_dictionary(
+        player_cards = self.hands_evaluator.create_player_card_dictionary(
             [self.player1, self.player2], self.community_cards)
 
-        best_flush = self.rule_manager.get_players_with_best_flush(
+        best_flush = self.hands_evaluator.get_players_with_best_flush(
             player_cards)
 
         self.assertEqual(winners, best_flush)
@@ -143,7 +143,7 @@ class TestRulesManager(unittest.TestCase):
         # Player 2 has cards that also do not contribute to the straight
         self.player2.receive_cards([Card('C', 'A'), Card('D', 'K')])
 
-        winners = self.rule_manager.get_winner(
+        winners = self.hands_evaluator.get_winner(
             [self.player1, self.player2], self.community_cards)
 
         # Both players should tie with the straight on the board
@@ -151,10 +151,10 @@ class TestRulesManager(unittest.TestCase):
         self.assertNotIn(self.player2, winners)
 
         # Checking if the players actually win on flush
-        player_cards = self.rule_manager.create_player_card_dictionary(
+        player_cards = self.hands_evaluator.create_player_card_dictionary(
             [self.player1, self.player2], self.community_cards)
 
-        best_straight = self.rule_manager.get_players_with_best_straight(
+        best_straight = self.hands_evaluator.get_players_with_best_straight(
             player_cards)
 
         self.assertEqual(winners, best_straight)
@@ -170,16 +170,16 @@ class TestRulesManager(unittest.TestCase):
         # Player 2 has unrelated high cards that do not contribute to a 3oak
         self.player2.receive_cards([Card('C', 'K'), Card('D', 'Q')])
 
-        winners = self.rule_manager.get_winner(
+        winners = self.hands_evaluator.get_winner(
             [self.player1, self.player2], self.community_cards)
         # Player 1 should be the winner with 3oak
         self.assertIn(self.player1, winners)
         self.assertNotIn(self.player2, winners)
         # Checking if the players actually win on 3oak
-        player_cards = self.rule_manager.create_player_card_dictionary(
+        player_cards = self.hands_evaluator.create_player_card_dictionary(
             [self.player1, self.player2], self.community_cards)
 
-        best_3oak = self.rule_manager.get_players_with_best_3oak(
+        best_3oak = self.hands_evaluator.get_players_with_best_3oak(
             player_cards)
 
         self.assertEqual(winners, best_3oak)
@@ -195,16 +195,16 @@ class TestRulesManager(unittest.TestCase):
         # Player 2 has a better Two Pair using one hole card and the community cards
         self.player2.receive_cards([Card('C', '9'), Card('D', 'Q')])
 
-        winners = self.rule_manager.get_winner(
+        winners = self.hands_evaluator.get_winner(
             [self.player1, self.player2], self.community_cards)
         # Player 2 should be the winner with a better Two Pair
         self.assertIn(self.player2, winners)
         self.assertNotIn(self.player1, winners)
         # Checking if the players actually win based on the Two Pair rule
-        player_cards = self.rule_manager.create_player_card_dictionary(
+        player_cards = self.hands_evaluator.create_player_card_dictionary(
             [self.player1, self.player2], self.community_cards)
 
-        best_two_pair = self.rule_manager.get_players_with_best_two_pairs(
+        best_two_pair = self.hands_evaluator.get_players_with_best_two_pairs(
             player_cards)
 
         self.assertEqual(winners, best_two_pair)
@@ -220,17 +220,17 @@ class TestRulesManager(unittest.TestCase):
         # Player 2 has a better Two Pair using one hole card and the community cards
         self.player2.receive_cards([Card('C', '7'), Card('D', 'J')])
 
-        winners = self.rule_manager.get_winner(
+        winners = self.hands_evaluator.get_winner(
             [self.player1, self.player2], self.community_cards)
 
         # Player 2 should be the winner with a higher One Pair
         self.assertIn(self.player2, winners)
         self.assertNotIn(self.player1, winners)
         # Checking if the players actually win based on the One Pair rule
-        player_cards = self.rule_manager.create_player_card_dictionary(
+        player_cards = self.hands_evaluator.create_player_card_dictionary(
             [self.player1, self.player2], self.community_cards)
 
-        best_one_pair = self.rule_manager.get_players_with_best_one_pair(
+        best_one_pair = self.hands_evaluator.get_players_with_best_one_pair(
             player_cards)
 
         self.assertEqual(winners, best_one_pair)
@@ -246,16 +246,16 @@ class TestRulesManager(unittest.TestCase):
         # Player 2 has a slightly higher card than Player 1, also not forming a pair or better
         self.player2.receive_cards([Card('C', 'Q'), Card('D', '6')])
 
-        winners = self.rule_manager.get_winner(
+        winners = self.hands_evaluator.get_winner(
             [self.player1, self.player2], self.community_cards)
         # Player 2 should be the winner with a higher card (Queen > Jack)
         self.assertIn(self.player2, winners)
         self.assertNotIn(self.player1, winners)
         # Checking if the players actually win based on the High Card rule
-        player_cards = self.rule_manager.create_player_card_dictionary(
+        player_cards = self.hands_evaluator.create_player_card_dictionary(
             [self.player1, self.player2], self.community_cards)
 
-        best_high_card = self.rule_manager.get_players_with_best_high_card(
+        best_high_card = self.hands_evaluator.get_players_with_best_high_card(
             player_cards)
 
         self.assertEqual(winners, best_high_card)
