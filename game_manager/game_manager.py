@@ -22,7 +22,7 @@ class RoundManager:
         self.initialize_round()
 
     def initialize_round(self):
-        self.current_bet = 0
+        self.current_bet = 2 * piv.small_blind
 
         self.collect_cards()
         self.deck_manager.shuffle_cards()
@@ -68,7 +68,10 @@ class RoundManager:
                 self.game_manager.user_interface.display_state(
                     self.game_manager.players, self.community_cards, current_player_index)
                 # this is where the action from a player is requested and performed
-                action = player.action(self.get_possible_actions(player))
+
+                possible_actions = self.get_possible_actions(player)
+                self.game_manager.user_interface.display_possible_actions(player, possible_actions, self.current_bet, piv.small_blind * 2)
+                action = player.action(possible_actions)
                 action_bet, update_starting_index = self.game_manager.action_manager.perform_action(
                     player, action, self.current_bet)
                 if action_bet > self.current_bet:
@@ -79,6 +82,13 @@ class RoundManager:
             if current_player_index == len(self.game_manager.players):
                 current_player_index = 0
             number_of_actions = number_of_actions + 1
+
+    def bet_small_blinds(self, player, n_small_blinds):
+        bet_amount = piv.small_blind * n_small_blinds
+        if player.chips > bet_amount:
+            self.game_manager.action_manager.perform_action(player, 'B', bet=bet_amount)
+        else:
+            self.game_manager.action_manager.perform_action(player, 'A')
 
     def round_is_over(self, number_of_actions):
         if number_of_actions < len(self.game_manager.players):
@@ -97,9 +107,7 @@ class RoundManager:
         if self.starting_player_index == len(self.game_manager.players):
             self.starting_player_index = 0
 
-    def get_possible_actions(self, player):
-        # TODO: calculate possible actions
-        
+    def get_possible_actions(self, player):        
         return self.game_manager.action_manager.get_possible_actions(player, self.current_bet)
 
     def reset_round_manager(self):
@@ -111,6 +119,12 @@ class RoundManager:
 
 
 class ActionManager():
+    ACTIONS = [
+        'C', # call/check
+        'B', # bet/raise
+        'F', # fold
+        'A', # all-in
+    ]
 
     def __init__(self):
         pass
@@ -118,11 +132,12 @@ class ActionManager():
     def get_possible_actions(self, player, current_bet: int = 0, raise_amount: int = 2 * piv.small_blind):
         possible_actions = []
         if player.chips + player.betted_chips > current_bet:
-            possible_actions.append(f'CHECK/CALL ({current_bet}$) ')
+            possible_actions.append('C')
         if player.chips + player.betted_chips > current_bet + raise_amount:
-            possible_actions.append(f'BET/RAISE ({current_bet + raise_amount}$) ')
-        possible_actions = possible_actions + ['FOLD ', 'ALL-IN ']
+            possible_actions.append('B')
+        possible_actions = possible_actions + ['F', 'A']
 
+        assert all(possible_action in self.ACTIONS for possible_action in possible_actions)
         return possible_actions
 
     def perform_action(self, player: Player, action: str, current_bet: int = 0, bet: int = 2 * piv.small_blind):
@@ -130,14 +145,14 @@ class ActionManager():
             raise ValueError
 
         update_starting_index = False
-        if 'FOLD' in action:
+        if action == 'F':
             player.fold()
-        if 'CHECK/CALL' in action:
+        elif action == 'C':
             player.check_or_call(current_bet)
-        if 'BET/RAISE' in action:
+        elif action == 'B':
             current_bet = player.bet_or_raise(current_bet, bet)
             update_starting_index = True
-        if 'ALL-IN' in action:
+        elif action == 'A':
             if player.chips + player.betted_chips > current_bet:
                 update_starting_index = True
             current_bet = player.all_in()
@@ -151,6 +166,8 @@ class TexasHoldemRoundManager(RoundManager):
 
     def play_preflop(self):
         super().deal_hole_cards(2)
+        self.bet_small_blinds(self.game_manager.players[self.starting_player_index-2], 1)
+        self.bet_small_blinds(self.game_manager.players[self.starting_player_index-1], 2)
         self.round_of_actions()
 
     def play_flop(self):

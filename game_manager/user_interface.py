@@ -78,6 +78,16 @@ class UserInterface():
         self.print_player_row(players_in_lower_row, current_player, winners)
         print('\n')
 
+    def display_possible_actions(self, player, possible_actions, current_bet, raise_amount):
+        ACTION_TO_PRETTY = {
+            'C': f'CHECK/CALL ({current_bet - player.betted_chips}) [C]',
+            'B': f'BET/RAISE ({current_bet + raise_amount - player.betted_chips}) [B]',
+            'F': 'FOLD [F]',
+            'A': 'ALL-IN [A]',
+        }
+
+        for action in possible_actions:
+            print(ACTION_TO_PRETTY[action])
 
 if __name__ == '__main__':
     # torstein = Player()
