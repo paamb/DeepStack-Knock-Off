@@ -53,8 +53,6 @@ class RuleManager():
             return players_with_straight
 
         # check if someone or multiple people have 3 of a kind
-
-        # TODO: Check for 2nd best highcard
         players_with_3oak = self.get_players_with_best_3oak(player_cards)
         if len(players_with_3oak) > 0:
             return players_with_3oak
@@ -66,14 +64,12 @@ class RuleManager():
             return players_with_two_pairs
 
         # # check if someone or multiple people have one pair
-        # TODO: Check for 2nd and 3rd best highcard
         players_with_one_pair = self.get_players_with_best_one_pair(
             player_cards)
         if len(players_with_one_pair) > 0:
             return players_with_one_pair
 
         # # check if someone or multiple people have high card
-        # TODO: Check for 2nd, 3rd and 4th best highcard
         players_with_high_card = self.get_players_with_best_high_card(
             player_cards)
         if len(players_with_high_card) > 0:
