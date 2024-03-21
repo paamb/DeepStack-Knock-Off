@@ -53,8 +53,6 @@ class RuleManager():
             return players_with_straight
 
         # check if someone or multiple people have 3 of a kind
-
-        # TODO: Check for 2nd best highcard
         players_with_3oak = self.get_players_with_best_3oak(player_cards)
         if len(players_with_3oak) > 0:
             return players_with_3oak
@@ -66,14 +64,12 @@ class RuleManager():
             return players_with_two_pairs
 
         # # check if someone or multiple people have one pair
-        # TODO: Check for 2nd and 3rd best highcard
         players_with_one_pair = self.get_players_with_best_one_pair(
             player_cards)
         if len(players_with_one_pair) > 0:
             return players_with_one_pair
 
         # # check if someone or multiple people have high card
-        # TODO: Check for 2nd, 3rd and 4th best highcard
         players_with_high_card = self.get_players_with_best_high_card(
             player_cards)
         if len(players_with_high_card) > 0:
@@ -270,20 +266,30 @@ class RuleManager():
 
     def player_has_flush(self, cards):
         suit_count = {}
+        flush_cards = []
         for card in cards:
             # Count the suit to check if we have flush
             suit_count[card.suit] = suit_count.get(card.suit, 0) + 1
-        # Check if we have 5 the same suit
-        return any(count >= 5 for count in suit_count.values())
+
+        if not any(count >= 5 for count in suit_count.values()):
+            return (False, [])
+
+        for suit, count in suit_count.items():
+            if count >= 5:
+                flush_suit = suit
+                break
+
+        flush_cards = [card for card in cards if card.suit == flush_suit]
+        return (True, flush_cards)
 
     def get_players_with_best_flush(self, player_cards):
         players_with_flush = []
         for (player, cards) in player_cards.items():
-            has_straight = self.player_has_flush(
+            has_flush, flush_cards = self.player_has_flush(
                 cards)
-            if has_straight:
+            if has_flush:
                 players_with_flush.append(
-                    (player, get_list_of_card_values(player_cards[player])))
+                    (player, get_list_of_card_values(flush_cards)))
 
         if len(players_with_flush) == 1:
             return [players_with_flush[0][0]]
