@@ -88,6 +88,7 @@ class UserInterface():
 
         for action in possible_actions:
             print(ACTION_TO_PRETTY[action])
+        print('\n')
 
 if __name__ == '__main__':
     # torstein = Player()
