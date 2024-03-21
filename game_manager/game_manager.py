@@ -280,9 +280,17 @@ class GameManager:
     def game_over(self):
         return len(list(filter(lambda player:player.chips > 0, self.players))) == 1
 
+    def determine_winner(self):
+        players_with_chips_left = [player for player in self.players if player.chips > 0]
+        assert len(players_with_chips_left) == 1
+        return players_with_chips_left[0]
+
     def play_game(self):
         while not self.game_over():
             self.round_manager.play_round()
+
+        winner = self.determine_winner()
+        return winner
     pass
 
 
