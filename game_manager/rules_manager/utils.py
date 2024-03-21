@@ -31,7 +31,7 @@ def get_list_of_card_values(cards: List[Card]):
 
 def get_players_with_best_high_card_from_tuple(player_cards_tuples):
     sorted_players_by_highest_hand = sorted(
-        player_cards_tuples, key=lambda x: (x[1][1], x[1][2], x[1][3], x[1][4], x[1][5]), reverse=True)
+        player_cards_tuples, key=lambda x: (x[1][0], x[1][1], x[1][2], x[1][3], x[1][4]), reverse=True)
 
     # # Best pair with 3 kickers
     best_pair_hand = sorted_players_by_highest_hand[0][1]
