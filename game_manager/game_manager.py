@@ -49,6 +49,8 @@ class RoundManager:
     def deal_hole_cards(self, number_of_cards_per_player):
         cards = []
         for player in self.game_manager.players:
+            if player.chips == 0:
+                continue
             cards = self.deck_manager.get_n_cards(number_of_cards_per_player)
             player.receive_cards(cards)
 

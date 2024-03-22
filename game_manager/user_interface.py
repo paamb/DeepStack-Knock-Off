@@ -14,22 +14,26 @@ class UserInterface():
 
         for player in players:
             player_string = ''
-            for card in player.hand:
-                player_string = player_string + \
-                    deck_matrix[(card.suit, card.value)] + ' '
-            player_string = player_string + ' ' + str(player.chips) + chips
+            if len(player.hand) == 0:
+                player_string = "BUSTED"
+            else:
+                for card in player.hand:
+                    player_string = player_string + \
+                        deck_matrix[(card.suit, card.value)] + ' '
+                player_string = player_string + ' ' + str(player.chips) + chips
 
+            player_string = f"{player_string:20}"
             if (not current_player == None and player == current_player) and not player in winners:
                 player_string = '\033[1;32m' + player_string + '\033[0m'
-                invisible_characters += 11
+                invisible_characters = invisible_characters + 11
             elif player in winners:
                 player_string = '\033[1;33m' + player_string + '\033[0m'
-                invisible_characters += 11
+                invisible_characters = invisible_characters + 11
             elif player.is_folded:
                 player_string = '\033[90m' + player_string + '\033[0m'
-                invisible_characters += 9
+                invisible_characters = invisible_characters + 9
 
-            row_string = row_string + player_string + self.WHITESPACE
+            row_string = row_string + player_string
 
         print(row_string)
         return len(row_string) - invisible_characters
