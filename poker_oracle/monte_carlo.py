@@ -110,7 +110,7 @@ class MonteCarlo:
             hand = player.hand_over_cards()
             deck_manager.receive_cards(hand)
 
-    def evaluate_hole_pair_win_probability(self, hole_pair, n_opponents, community_cards):
+    def evaluate_hole_pair_win_probability(self, hole_pair, n_opponents, community_cards, n_rollouts=1000):
         current_hole_pairs = self.hole_pair_string_to_object(hole_pair)
 
         # Initialize deck of cards
@@ -124,9 +124,8 @@ class MonteCarlo:
         player_1.receive_cards(current_hole_pairs)
 
         num_player_1_wins = 0
-        N = 10
 
-        for _ in range(N):
+        for _ in range(n_rollouts):
             deck_manager.shuffle_cards()
             # print(len(deck_manager.cards))
             # Deal opponents cards
@@ -140,15 +139,12 @@ class MonteCarlo:
             winner = hands_evaluator.get_winner(
                 [player_1] + opponents, public_cards)
 
-            if player_1 in winner and len(winner) > 1:
-                num_player_1_wins += 0.5
-            elif winner[0] == player_1:
-                num_player_1_wins += 1
+            if player_1 in winner:
+                num_player_1_wins += 1/(len(winner))
 
             self.opponents_hand_over_cards(deck_manager, opponents)
             deck_manager.receive_cards(public_cards)
-            # print(len(deck_manager.cards))
-        return num_player_1_wins / N
+        return num_player_1_wins / n_rollouts
 
 
 # print(evaluate_hole_pair_win_probability('HADK'))
