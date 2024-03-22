@@ -2,10 +2,12 @@ from typing import List
 from .deck_manager import Card
 from .pivotal_parameters import pivotal_parameters as piv
 from resolvers.resolvers import DeepStackResolver, PureRolloutResolver
+
 import random
 
 
 class Player():
+
     # Abstrakt
     # CardContainer
     # Chips
