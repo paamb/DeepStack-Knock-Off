@@ -1,6 +1,8 @@
 from typing import List
 from .deck_manager import Card
 from .pivotal_parameters import pivotal_parameters as piv
+from ..resolvers.resolvers import DeepStackResolver, PureRolloutResolver
+import random
 
 
 class Player():
@@ -88,5 +90,17 @@ class HumanPlayer(Player):
 
 
 class AIPlayer(Player):
+
+    def __init__(self, chips=piv.starting_chips_per_player, probability_of_pure_rollout=1.0):
+        super().__init__(chips)
+        self.probability_of_pure_rollout = probability_of_pure_rollout
+        self.pure_rollout_resolver = PureRolloutResolver()
+        self.deepstack_resolver = DeepStackResolver()
+
+    def action(self, possible_actions):
+        resolver = self.pure_rollout_resolver if random.random() < self.probability_of_pure_rollout else self.deepstack_resolver
+        return 'C'
+
+
     # Action() - Must go throught algorithm before making move (needs betting aswell)
     pass
