@@ -24,7 +24,7 @@ class Player():
     def fold(self):
         self.is_folded = True
 
-    def check_or_call(self, current_bet=0):        
+    def check_or_call(self, current_bet=0):
         amount_to_call = current_bet - self.betted_chips
         if self.chips >= amount_to_call:
             self.betted_chips += amount_to_call

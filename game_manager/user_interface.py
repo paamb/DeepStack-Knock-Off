@@ -1,6 +1,5 @@
 from .player import Player
 from .deck_manager import Card
-from .rules_manager.rules_manager import RuleManager
 from .unicode import deck_matrix, chips, hidden_card
 
 
@@ -37,7 +36,7 @@ class UserInterface():
 
         print(row_string)
         return len(row_string) - invisible_characters
-    
+
     def print_community_row(self, community_cards, row_length):
         estimated_community_cards_length = 14
         base = ' ' * (row_length // 2 - estimated_community_cards_length // 2)
@@ -67,10 +66,11 @@ class UserInterface():
             current_player = players[current_player_index]
         else:
             current_player = None
-        
+
         print("\033c")
 
-        first_row_length = self.print_player_row(players_in_upper_row, current_player, winners)
+        first_row_length = self.print_player_row(
+            players_in_upper_row, current_player, winners)
         print('\n')
 
         self.print_pot(players, first_row_length)
@@ -110,7 +110,7 @@ if __name__ == '__main__':
 
     # community_cards = [card1, card2, card3, card4, card5]
 
-    # rule_manager = RuleManager()
-    # print(rule_manager.get_winner([torstein, paal], community_cards))
-    # rule_manager.player_has_4oak([1, 2, 3, 4, 5, 6, 7])
+    # hands_evaluator = HandsEvaluator()
+    # print(hands_evaluator.get_winner([torstein, paal], community_cards))
+    # hands_evaluator.player_has_4oak([1, 2, 3, 4, 5, 6, 7])
     pass

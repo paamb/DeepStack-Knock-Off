@@ -1,10 +1,10 @@
 from typing import Dict, List
-from ..player import Player
-from ..deck_manager import Card
+from game_manager.player import Player
+from game_manager.deck_manager import Card
 from .utils import *
 
 
-class RuleManager():
+class HandsEvaluator():
 
     def sort_on_value(self, cards):
         return sorted(cards, key=lambda card: card_values[card.value], reverse=True)
@@ -517,4 +517,4 @@ if __name__ == '__main__':
 
     community_cards = [card1, card2, card3, card4, card5]
 
-    rule_manager = RuleManager()
+    hands_evaluator = HandsEvaluator()
