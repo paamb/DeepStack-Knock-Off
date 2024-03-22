@@ -5,6 +5,9 @@ run:
 	@echo "Running game manager..."
 	python3 -m game_manager.game_manager
 
+hole:
+	python3 -m poker_oracle.monte_carlo
+
 # Target for testing the rules manager
 test:
 	@echo "Testing rules manager..."
