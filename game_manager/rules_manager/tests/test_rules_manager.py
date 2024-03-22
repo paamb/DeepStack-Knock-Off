@@ -54,6 +54,28 @@ class TestRulesManager(unittest.TestCase):
             player_cards)
         self.assertEqual(winners, best_straight_flush)
 
+    def test_straight_flush_low_ace(self):
+        # Reset community cards for a straight flush scenario
+        self.community_cards = [
+            Card('S', '2'), Card('S', '3'),
+            Card('S', '4'), Card('C', '5'), Card('S', 'J')
+        ]
+        # Assuring a Straight Flush
+        self.player1.receive_cards([Card('S', 'A'), Card('S', '5')])
+        self.player2.receive_cards([Card('S', 'A'), Card('S', '8')])
+        winners = self.rule_manager.get_winner(
+            [self.player1, self.player2], self.community_cards)
+        # Player 2 should be winning with higher straight flush
+        self.assertNotIn(self.player2, winners)
+        self.assertIn(self.player1, winners)
+
+        player_cards = self.rule_manager.create_player_card_dictionary(
+            [self.player1, self.player2], self.community_cards)
+
+        best_straight_flush = self.rule_manager.get_players_with_best_straight_flush(
+            player_cards)
+        self.assertEqual(winners, best_straight_flush)
+
     def test_four_of_a_kind(self):
         # Reset community cards for a 4oak scenario
         self.community_cards = [
@@ -158,6 +180,24 @@ class TestRulesManager(unittest.TestCase):
             player_cards)
 
         self.assertEqual(winners, best_straight)
+
+    def test_straight_low_ace(self):
+        # Reset community cards for a straight scenario
+        self.community_cards = [
+            Card('S', '3'), Card('H', '4'),
+            Card('D', '4'), Card('D', '5'), Card('S', '8')
+        ]
+        # Player 1 has cards that do not contribute to a straight
+        self.player1.receive_cards([Card('S', 'A'), Card('H', 'T')])
+        # Player 2 has cards that also contribute to a low straight
+        self.player2.receive_cards([Card('C', 'A'), Card('D', '2')])
+
+        winners = self.rule_manager.get_winner(
+            [self.player1, self.player2], self.community_cards)
+
+        # player2 should win with a low straight
+        self.assertNotIn(self.player1, winners)
+        self.assertIn(self.player2, winners)
 
     def test_three_of_a_kind(self):
         # Reset community cards for a 3oak scenario

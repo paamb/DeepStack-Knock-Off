@@ -120,6 +120,7 @@ class RuleManager():
 
     def player_has_straight_flush(self, cards: List[Card]):
         # In Texas holdem we will loop over 3 possible straights
+        cards = self.add_low_ace_cards(cards)
         num_possible_straights = len(cards) - length_of_player_hand + 1
 
         for i in range(num_possible_straights):
@@ -320,9 +321,18 @@ class RuleManager():
             previous_value = card_values[card.value]
 
         return straight
+    
+    def add_low_ace_cards(self, cards):
+        cards_to_add = []
+        for card in cards:
+            if card.value == 'A':
+                cards_to_add.append(Card(card.suit, 'AL'))
+        return cards + cards_to_add
 
     def player_has_straight(self, cards: List[Card]):
         # In Texas holdem we will loop over 3 possible straights
+        cards = self.add_low_ace_cards(cards)
+
         num_possible_straights = len(cards) - length_of_player_hand + 1
         for i in range(num_possible_straights):
             max_value = card_values[cards[i].value]
