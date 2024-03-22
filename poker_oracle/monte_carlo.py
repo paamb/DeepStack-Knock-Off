@@ -107,7 +107,7 @@ class MonteCarlo:
             hand = player.hand_over_cards()
             deck_manager.receive_cards(hand)
 
-    def evaluate_hole_pair_win_probability(self, hole_pair, n_opponents, community_cards):
+    def evaluate_hole_pair_win_probability(self, hole_pair, n_opponents, community_cards, n_rollouts=1000):
         if isinstance(hole_pair, str):
             hole_pair = self.hole_pair_string_to_object(hole_pair)
 
@@ -123,10 +123,8 @@ class MonteCarlo:
         player_1.receive_cards(hole_pair)
 
         num_player_1_wins = 0
-        N = 10000
-
         num_public_cards_to_deal = 5 - len(community_cards)
-        for _ in range(N):
+        for _ in range(n_rollouts):
             deck_manager.shuffle_cards()
             # Deal opponents cards
             self.deal_opponents_cards(deck_manager, opponents)
@@ -140,23 +138,12 @@ class MonteCarlo:
             winner = hands_evaluator.get_winner(
                 [player_1] + opponents, public_cards + community_cards)
 
-            if player_1 in winner and len(winner) > 1:
-                # input(public_cards, opponents[0].hand)
-                num_player_1_wins += 0.5
-                # print("Equal: ", opponents[0].hand,
-                #       public_cards + community_cards, "US: ", hole_pair)
-            elif winner[0] == player_1:
-                num_player_1_wins += 1
-                # print("Win: ", opponents[0].hand,
-                #       public_cards + community_cards, "US: ", hole_pair)
-            else:
-                print("Lost: ", opponents[0].hand,
-                      public_cards + community_cards, "US: ", hole_pair)
-                # print("")
+            if player_1 in winner:
+                num_player_1_wins += 1/(len(winner))
 
             self.opponents_hand_over_cards(deck_manager, opponents)
             deck_manager.receive_cards(public_cards)
-        return num_player_1_wins / N
+        return num_player_1_wins / n_rollouts
 
 
 if __name__ == '__main__':
@@ -165,9 +152,8 @@ if __name__ == '__main__':
     # montecarlo.write_probability_dictionary_to_file(
     # win_probabilites_for_classes)
     player = Player()
-    player.hand = [Card('C', '3'), Card('D', 'K')]
-    community_cards = [Card('H', 'Q'),
-                       Card('S', '2'), Card('C', '7'), Card('H', '9'), Card('D', 'J')]
+    player.hand = [Card('H', 'A'), Card('H', 'K')]
+    community_cards = [Card('H', 'Q'), Card('H', 'T'), Card('H', 'J')]
     probability = montecarlo.evaluate_player_win_probability_after_pre_flop(
         player, community_cards, 1)
     print(probability)
