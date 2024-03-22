@@ -22,6 +22,8 @@ class PureRolloutResolver(Resolver):
     def choose_action(self, player, state):
         win_probability = self.get_win_probability_from_hole_cards(
             player, state.community_cards)
+
+        print(win_probability)
         # Want to add potsize later
         expectation_value = 3 + np.tanh(win_probability - 0.5)*2
         std_dev = 1
@@ -34,6 +36,6 @@ class PureRolloutResolver(Resolver):
         elif x_value_for_action > 1 and x_value_for_action < 4:
             return 'C'
         elif x_value_for_action > 4 and x_value_for_action < 5:
-            return 'R'
+            return 'B'
         else:
-            'A'
+            return 'A'

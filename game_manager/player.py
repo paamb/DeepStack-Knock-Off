@@ -10,11 +10,12 @@ class Player():
     # CardContainer
     # Chips
 
-    def __init__(self, chips=piv.starting_chips_per_player) -> None:
+    def __init__(self, chips=piv.starting_chips_per_player, hide_cards=False) -> None:
         self.hand = []
         self.chips = chips
         self.betted_chips = 0
         self.is_folded = False
+        self.hide_cards = hide_cards
         pass
 
     def action():
@@ -77,7 +78,8 @@ class HumanPlayer(Player):
     # Action() (Betting. Takes in gamestate)
     def action(self, state):
 
-        input_to_action = {action[:1]: action for action in possible_actions}
+        input_to_action = {
+            action[:1]: action for action in state.possible_actions}
 
         # for action in possible_actions:
         selected_action = input(

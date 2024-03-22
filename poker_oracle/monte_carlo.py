@@ -1,14 +1,19 @@
 from game_manager.deck_manager import Card, DeckManager
-from game_manager.player import Player
-from poker_oracle.hands_evaluator.hands_evaluator import HandsEvaluator
-from poker_oracle.hands_evaluator.utils import suits, ranks, card_values
+
+# from poker_oracle.hands_evaluator.utils import suits, ranks, card_values
 import csv
 
 # card_values = {'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
 #    '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2}
 
+card_values = {'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
+               '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2, 'AL': 1}
+suits = ['C', 'D', 'H', 'S']
+ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
+
 
 class MonteCarlo:
+
     def generate_all_cards(self):
         all_cards = []
         for suit in suits:
@@ -108,6 +113,8 @@ class MonteCarlo:
             deck_manager.receive_cards(hand)
 
     def evaluate_hole_pair_win_probability(self, hole_pair, n_opponents, community_cards, n_rollouts=10000):
+        from game_manager.player import Player
+        from poker_oracle.hands_evaluator.hands_evaluator import HandsEvaluator
         if isinstance(hole_pair, str):
             hole_pair = self.hole_pair_string_to_object(hole_pair)
 

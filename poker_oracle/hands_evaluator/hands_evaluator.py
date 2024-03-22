@@ -1,5 +1,5 @@
 from typing import Dict, List
-from game_manager.player import Player
+# from game_manager.player import Player
 from game_manager.deck_manager import Card
 from .utils import *
 
@@ -492,18 +492,19 @@ class HandsEvaluator():
         return best_players
 
 
-if __name__ == '__main__':
-    torstein = Player()
-    torstein.receive_cards([Card('S', '3'), Card('S', '8')])
-    paal = Player()
-    paal.receive_cards([Card('S', '2'), Card('S', '3')])
+# if __name__ == '__main__':
 
-    card1 = Card('S', '4')
-    card2 = Card('S', '5')
-    card3 = Card('S', '6')
-    card4 = Card('S', '7')
-    card5 = Card('S', '9')
+#     torstein = Player()
+#     torstein.receive_cards([Card('S', '3'), Card('S', '8')])
+#     paal = Player()
+#     paal.receive_cards([Card('S', '2'), Card('S', '3')])
 
-    community_cards = [card1, card2, card3, card4, card5]
+#     card1 = Card('S', '4')
+#     card2 = Card('S', '5')
+#     card3 = Card('S', '6')
+#     card4 = Card('S', '7')
+#     card5 = Card('S', '9')
 
-    hands_evaluator = HandsEvaluator()
+#     community_cards = [card1, card2, card3, card4, card5]
+
+#     hands_evaluator = HandsEvaluator()

@@ -1,6 +1,7 @@
 from typing import List
 from .player import Player, HumanPlayer, AIPlayer
 from poker_oracle.hands_evaluator.hands_evaluator import HandsEvaluator
+from state_manager.state_manager import StateManager, State
 from .deck_manager import DeckManager, Card
 from .user_interface import UserInterface
 from .pivotal_parameters import pivotal_parameters as piv
@@ -16,6 +17,7 @@ class RoundManager:
     def __init__(self, game_manager: 'GameManager') -> None:
         self.deck_manager = DeckManager()
         self.game_manager = game_manager
+        self.state_manager = StateManager()
         self.community_cards = []
         self.burnt_cards = []
         self.starting_player_index = 0
@@ -74,7 +76,10 @@ class RoundManager:
                 possible_actions = self.get_possible_actions(player)
                 self.game_manager.user_interface.display_possible_actions(
                     player, possible_actions, self.current_bet, piv.small_blind * 2)
-                action = player.action(possible_actions)
+
+                state = self.state_manager.get_state(self)
+
+                action = player.action(state)
                 action_bet, update_starting_index = self.game_manager.action_manager.perform_action(
                     player, action, self.current_bet)
                 if action_bet > self.current_bet:
