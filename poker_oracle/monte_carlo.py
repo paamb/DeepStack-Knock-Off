@@ -76,11 +76,9 @@ class MonteCarlo:
         hole_pair_representatives = []
         for hole_pair in all_hole_pairs:
             hole_pair_class = self.hole_pair_to_class(hole_pair)
-
             if not found_hole_pair_classes.get(hole_pair_class, False):
                 found_hole_pair_classes[hole_pair_class] = True
                 hole_pair_representatives.append(hole_pair)
-        print(len(hole_pair_representatives))
         return hole_pair_representatives
 
     def evaluate_all_hole_pair_win_probabilities_classes(self):
@@ -92,13 +90,12 @@ class MonteCarlo:
         for hole_pair_representing_class, probability in win_probabilites_for_hole_pair_representing_classes.items():
             hole_pair_class = self.hole_pair_to_class(
                 hole_pair_representing_class)
-            print(hole_pair_class, probability)
             win_probabilites_for_classes[hole_pair_class] = probability
         return win_probabilites_for_classes
 
-    def evaluate_all_hole_pair_win_probabilities_after_pre_flop(self):
-        all_hole_pairs = self.get_all_possible_hole_pairs()
-        self.evaluate_all_hole_pair_win_probabilities(all_hole_pairs)
+    def evaluate_player_win_probability_after_pre_flop(self, player_1, community_cards, n_opponents=1):
+        return self.evaluate_hole_pair_win_probability(
+            player_1.hand, n_opponents, community_cards)
 
     def deal_opponents_cards(self, deck_manager, opponents):
         for player in opponents:
@@ -111,53 +108,66 @@ class MonteCarlo:
             deck_manager.receive_cards(hand)
 
     def evaluate_hole_pair_win_probability(self, hole_pair, n_opponents, community_cards):
-        current_hole_pairs = self.hole_pair_string_to_object(hole_pair)
+        if isinstance(hole_pair, str):
+            hole_pair = self.hole_pair_string_to_object(hole_pair)
 
-        # Initialize deck of cards
-        deck_manager = DeckManager(True, current_hole_pairs)
+        # Initialize deck of cards without hole_pair and community_cards
+        deck_manager = DeckManager(True, hole_pair + community_cards)
+
         deck_manager.shuffle_cards()
 
         player_1 = Player()
         opponents = [Player() for _ in range(n_opponents)]
 
         # Deal cards
-        player_1.receive_cards(current_hole_pairs)
+        player_1.receive_cards(hole_pair)
 
         num_player_1_wins = 0
-        N = 10
+        N = 10000
 
+        num_public_cards_to_deal = 5 - len(community_cards)
         for _ in range(N):
             deck_manager.shuffle_cards()
-            # print(len(deck_manager.cards))
             # Deal opponents cards
             self.deal_opponents_cards(deck_manager, opponents)
 
             # Deal public cards
-            public_cards = deck_manager.get_n_cards(5)
+            public_cards = deck_manager.get_n_cards(
+                num_public_cards_to_deal)
 
             # Find the winner from the rollout
             hands_evaluator = HandsEvaluator()
             winner = hands_evaluator.get_winner(
-                [player_1] + opponents, public_cards)
+                [player_1] + opponents, public_cards + community_cards)
 
             if player_1 in winner and len(winner) > 1:
+                # input(public_cards, opponents[0].hand)
                 num_player_1_wins += 0.5
+                # print("Equal: ", opponents[0].hand,
+                #       public_cards + community_cards, "US: ", hole_pair)
             elif winner[0] == player_1:
                 num_player_1_wins += 1
+                # print("Win: ", opponents[0].hand,
+                #       public_cards + community_cards, "US: ", hole_pair)
+            else:
+                print("Lost: ", opponents[0].hand,
+                      public_cards + community_cards, "US: ", hole_pair)
+                # print("")
 
             self.opponents_hand_over_cards(deck_manager, opponents)
             deck_manager.receive_cards(public_cards)
-            # print(len(deck_manager.cards))
         return num_player_1_wins / N
 
 
-# print(evaluate_hole_pair_win_probability('HADK'))
 if __name__ == '__main__':
     montecarlo = MonteCarlo()
-    win_probabilites_for_classes = montecarlo.evaluate_all_hole_pair_win_probabilities_classes()
-    montecarlo.write_probability_dictionary_to_file(
-        win_probabilites_for_classes)
-    # print(liste)
-# # simulate_all_hole_pairs()
-
-# print(len(get_all_possible_hole_pairs()))
+    # win_probabilites_for_classes = montecarlo.evaluate_all_hole_pair_win_probabilities_classes()
+    # montecarlo.write_probability_dictionary_to_file(
+    # win_probabilites_for_classes)
+    player = Player()
+    player.hand = [Card('C', '3'), Card('D', 'K')]
+    community_cards = [Card('H', 'Q'),
+                       Card('S', '2'), Card('C', '7'), Card('H', '9'), Card('D', 'J')]
+    probability = montecarlo.evaluate_player_win_probability_after_pre_flop(
+        player, community_cards, 1)
+    print(probability)

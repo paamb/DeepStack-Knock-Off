@@ -81,6 +81,7 @@ class HandsEvaluator():
         unique_cards_counter = 1
         straight = False
         suit_count = {}
+        print(cards)
         for card in (cards):
             if card_values[card.value] < previous_value - 1:
                 # Return something indicating that we dont have a straight-flush
@@ -106,10 +107,9 @@ class HandsEvaluator():
     # EVALUATION FUNCTIONS ### metode: returner nøkkelverdier for hvevr hånd for senere sammenligning
 
     def player_has_royal_flush(self, cards: List[Card]):
-        min_value = 10
-        max_value = 14
-
-        return self.check_straight_flush_from_start_card(cards, min_value, max_value)
+        has_straight_flush, highest_card = self.player_has_straight_flush(
+            cards)
+        return has_straight_flush and highest_card == 14
 
     def get_players_with_royal_flush(self, player_cards: Dict[Player, List[Card]]):
         players_with_royal_flush = []
@@ -119,19 +119,11 @@ class HandsEvaluator():
         return players_with_royal_flush
 
     def player_has_straight_flush(self, cards: List[Card]):
-        # In Texas holdem we will loop over 3 possible straights
-        num_possible_straights = len(cards) - length_of_player_hand + 1
+        has_flush, flush_cards = self.player_has_flush(cards)
+        if not has_flush:
+            return (False, 0)
 
-        for i in range(num_possible_straights):
-            max_value = card_values[cards[i].value]
-
-            # The last card in the straight is 4 lower than highest
-            min_value = max_value - 4
-
-            if (self.check_straight_flush_from_start_card(
-                    cards[i:], min_value, max_value)):
-                return (True, max_value)
-        return (False, 0)
+        return self.player_has_straight(flush_cards)
 
     def get_players_with_best_straight_flush(self, player_cards: Dict[Player, List[Card]]):
         players_with_straight_flush = []
@@ -254,14 +246,15 @@ class HandsEvaluator():
 
         if not players_with_full_house:
             return []
-
+        # print(players_with_full_house)
         sorted_players_with_full_house = sorted(
-            players_with_full_house, key=lambda x: (x[1], x[2]), reverse=True)
+            players_with_full_house, key=lambda x: (card_values[x[1]], card_values[x[2]]), reverse=True)
+        # print(sorted_players_with_full_house)
         best_full_house = sorted_players_with_full_house[0][1], sorted_players_with_full_house[0][2]
 
         best_players = [player_tuple[0] for player_tuple in players_with_full_house if (
             player_tuple[1], player_tuple[2]) == best_full_house]
-
+        # print(best_players)
         return best_players
 
     def player_has_flush(self, cards):
