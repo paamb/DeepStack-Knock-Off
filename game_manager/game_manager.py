@@ -1,6 +1,6 @@
 from typing import List
 from .player import Player, HumanPlayer, AIPlayer
-from .rules_manager.rules_manager import RuleManager
+from poker_oracle.hands_evaluator.hands_evaluator import HandsEvaluator
 from .deck_manager import DeckManager, Card
 from .user_interface import UserInterface
 from .pivotal_parameters import pivotal_parameters as piv
@@ -56,7 +56,7 @@ class RoundManager:
 
     def remaining_players(self):
         return list(filter(lambda player: not player.is_folded, self.game_manager.players))
-    
+
     def players_with_betted_chips(self):
         return list(filter(lambda player: player.betted_chips > 0, self.game_manager.players))
 
@@ -72,7 +72,8 @@ class RoundManager:
                 # this is where the action from a player is requested and performed
 
                 possible_actions = self.get_possible_actions(player)
-                self.game_manager.user_interface.display_possible_actions(player, possible_actions, self.current_bet, piv.small_blind * 2)
+                self.game_manager.user_interface.display_possible_actions(
+                    player, possible_actions, self.current_bet, piv.small_blind * 2)
                 action = player.action(possible_actions)
                 action_bet, update_starting_index = self.game_manager.action_manager.perform_action(
                     player, action, self.current_bet)
@@ -88,7 +89,8 @@ class RoundManager:
     def bet_small_blinds(self, player, n_small_blinds):
         bet_amount = piv.small_blind * n_small_blinds
         if player.chips > bet_amount:
-            self.game_manager.action_manager.perform_action(player, 'B', bet=bet_amount)
+            self.game_manager.action_manager.perform_action(
+                player, 'B', bet=bet_amount)
         else:
             self.game_manager.action_manager.perform_action(player, 'A')
 
@@ -109,23 +111,24 @@ class RoundManager:
         if self.starting_player_index == len(self.game_manager.players):
             self.starting_player_index = 0
 
-    def get_possible_actions(self, player):        
+    def get_possible_actions(self, player):
         return self.game_manager.action_manager.get_possible_actions(player, self.current_bet)
 
     def reset_round_manager(self):
         self.current_bet = 0
 
     def total_pot(self):
-        total_pot = sum(player.betted_chips for player in self.game_manager.players)
+        total_pot = sum(
+            player.betted_chips for player in self.game_manager.players)
         return total_pot
 
 
 class ActionManager():
     ACTIONS = [
-        'C', # call/check
-        'B', # bet/raise
-        'F', # fold
-        'A', # all-in
+        'C',  # call/check
+        'B',  # bet/raise
+        'F',  # fold
+        'A',  # all-in
     ]
 
     def __init__(self):
@@ -139,7 +142,8 @@ class ActionManager():
             possible_actions.append('B')
         possible_actions = possible_actions + ['F', 'A']
 
-        assert all(possible_action in self.ACTIONS for possible_action in possible_actions)
+        assert all(
+            possible_action in self.ACTIONS for possible_action in possible_actions)
         return possible_actions
 
     def perform_action(self, player: Player, action: str, current_bet: int = 0, bet: int = 2 * piv.small_blind):
@@ -168,8 +172,10 @@ class TexasHoldemRoundManager(RoundManager):
 
     def play_preflop(self):
         super().deal_hole_cards(2)
-        self.bet_small_blinds(self.game_manager.players[self.starting_player_index-2], 1)
-        self.bet_small_blinds(self.game_manager.players[self.starting_player_index-1], 2)
+        self.bet_small_blinds(
+            self.game_manager.players[self.starting_player_index-2], 1)
+        self.bet_small_blinds(
+            self.game_manager.players[self.starting_player_index-1], 2)
         self.round_of_actions()
 
     def play_flop(self):
@@ -195,12 +201,16 @@ class TexasHoldemRoundManager(RoundManager):
     def finalize_round(self):
         # show cards
 
-        winners = self.game_manager.rule_manager.get_winner(self.remaining_players(), self.community_cards)
-        self.game_manager.user_interface.round_over(self.game_manager.players, self.community_cards, winners)
-        self.game_manager.pot_manager.distribute_pot(self.players_with_betted_chips(), winners)
-        
+        winners = self.game_manager.hands_evaluator.get_winner(
+            self.remaining_players(), self.community_cards)
+        self.game_manager.user_interface.round_over(
+            self.game_manager.players, self.community_cards, winners)
+        self.game_manager.pot_manager.distribute_pot(
+            self.players_with_betted_chips(), winners)
+
         for player in self.game_manager.players:
             player.round_ended()
+
 
 class PotManager():
     # self.subpots contains the pot as a subpot with all the players contributing, in addition to all eventual subpots.
@@ -210,27 +220,32 @@ class PotManager():
         pass
 
     def distribute_pot(self, all_players, winners):
-        subpots = self.create_subpots(all_players) # items: (subpot_total, [...players_contributed_to_subpot])
+        # items: (subpot_total, [...players_contributed_to_subpot])
+        subpots = self.create_subpots(all_players)
 
         for (subpot_total, contributing_players) in subpots:
             # winners of subpot is the intersection of all the winners and the contributors to the subpot
-            contributing_winners = list(set(contributing_players) & set(winners))
+            contributing_winners = list(
+                set(contributing_players) & set(winners))
             if len(contributing_winners) == 0:
                 # no winners in subpot => subpot is going back to its contributors
-                self.distribute_subpot_to_players(subpot_total, contributing_players)
+                self.distribute_subpot_to_players(
+                    subpot_total, contributing_players)
             else:
                 # subpot is distributed to the winners of its contributors
-                self.distribute_subpot_to_players(subpot_total, contributing_winners)
+                self.distribute_subpot_to_players(
+                    subpot_total, contributing_winners)
 
     def distribute_subpot_to_players(self, subpot_total, receiving_players):
         chips_to_each = subpot_total / len(receiving_players)
         for player in receiving_players:
             player.receive_chips(chips_to_each)
 
-
     def create_subpots(self, all_players):
-        subpots = [] # items: (subpot_total, [...players_contributed_to_subpot])
-        all_players_sorted = sorted(all_players, key=lambda player: player.betted_chips)
+        # items: (subpot_total, [...players_contributed_to_subpot])
+        subpots = []
+        all_players_sorted = sorted(
+            all_players, key=lambda player: player.betted_chips)
 
         # create subpots, keeping track of its contributors
         for i in range(len(all_players_sorted)):
@@ -244,13 +259,15 @@ class PotManager():
             # since we always handle the player with the least betted chips first, the players to the right will never have betted less than this
             chips_to_subtract = player.betted_chips
             for j in range(i, len(all_players_sorted)):
-                all_players_sorted[j].betted_chips = all_players_sorted[j].betted_chips - chips_to_subtract
+                all_players_sorted[j].betted_chips = all_players_sorted[j].betted_chips - \
+                    chips_to_subtract
 
             contributing_players = all_players_sorted[i:]
 
             subpots.append((subpot_total, contributing_players))
 
         return subpots
+
 
 class GameManager:
     """
@@ -262,7 +279,7 @@ class GameManager:
     def __init__(self) -> None:
         self.create_players()
         self.set_round_manager()
-        self.set_rule_manager()
+        self.set_hands_evaluator()
         self.set_user_interface()
         self.set_action_manager()
         self.set_pot_manager()
@@ -270,8 +287,8 @@ class GameManager:
     def set_pot_manager(self):
         self.pot_manager = PotManager()
 
-    def set_rule_manager(self):
-        self.rule_manager = RuleManager()
+    def set_hands_evaluator(self):
+        self.hands_evaluator = HandsEvaluator()
 
     def set_user_interface(self):
         self.user_interface = UserInterface()
@@ -291,10 +308,11 @@ class GameManager:
             self.round_manager = TexasHoldemRoundManager(self)
 
     def game_over(self):
-        return len(list(filter(lambda player:player.chips > 0, self.players))) == 1
+        return len(list(filter(lambda player: player.chips > 0, self.players))) == 1
 
     def determine_winner(self):
-        players_with_chips_left = [player for player in self.players if player.chips > 0]
+        players_with_chips_left = [
+            player for player in self.players if player.chips > 0]
         assert len(players_with_chips_left) == 1
         return players_with_chips_left[0]
 
