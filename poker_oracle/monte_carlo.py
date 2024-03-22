@@ -107,7 +107,7 @@ class MonteCarlo:
             hand = player.hand_over_cards()
             deck_manager.receive_cards(hand)
 
-    def evaluate_hole_pair_win_probability(self, hole_pair, n_opponents, community_cards, n_rollouts=1000):
+    def evaluate_hole_pair_win_probability(self, hole_pair, n_opponents, community_cards, n_rollouts=10000):
         if isinstance(hole_pair, str):
             hole_pair = self.hole_pair_string_to_object(hole_pair)
 
@@ -140,7 +140,7 @@ class MonteCarlo:
 
             if player_1 in winner:
                 num_player_1_wins += 1/(len(winner))
-
+            # print("Loss: ", )
             self.opponents_hand_over_cards(deck_manager, opponents)
             deck_manager.receive_cards(public_cards)
         return num_player_1_wins / n_rollouts
@@ -148,12 +148,12 @@ class MonteCarlo:
 
 if __name__ == '__main__':
     montecarlo = MonteCarlo()
-    # win_probabilites_for_classes = montecarlo.evaluate_all_hole_pair_win_probabilities_classes()
-    # montecarlo.write_probability_dictionary_to_file(
-    # win_probabilites_for_classes)
+    win_probabilites_for_classes = montecarlo.evaluate_all_hole_pair_win_probabilities_classes()
+    montecarlo.write_probability_dictionary_to_file(
+        win_probabilites_for_classes)
     player = Player()
-    player.hand = [Card('H', 'A'), Card('H', 'K')]
+    player.hand = [Card('H', '9'), Card('H', 'K')]
     community_cards = [Card('H', 'Q'), Card('H', 'T'), Card('H', 'J')]
     probability = montecarlo.evaluate_player_win_probability_after_pre_flop(
         player, community_cards, 1)
-    # print(probability)
+    print(probability)

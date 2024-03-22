@@ -1,7 +1,7 @@
 from typing import List
 from .deck_manager import Card
 from .pivotal_parameters import pivotal_parameters as piv
-from ..resolvers.resolvers import DeepStackResolver, PureRolloutResolver
+from resolvers.resolvers import DeepStackResolver, PureRolloutResolver
 import random
 
 
@@ -75,7 +75,7 @@ class Player():
 
 class HumanPlayer(Player):
     # Action() (Betting. Takes in gamestate)
-    def action(self, possible_actions):
+    def action(self, state):
 
         input_to_action = {action[:1]: action for action in possible_actions}
 
@@ -97,10 +97,11 @@ class AIPlayer(Player):
         self.pure_rollout_resolver = PureRolloutResolver()
         self.deepstack_resolver = DeepStackResolver()
 
-    def action(self, possible_actions):
-        resolver = self.pure_rollout_resolver if random.random() < self.probability_of_pure_rollout else self.deepstack_resolver
-        return 'C'
-
+    def action(self, state):
+        resolver = self.pure_rollout_resolver if random.random(
+        ) < self.probability_of_pure_rollout else self.deepstack_resolver
+        action = resolver.choose_action(self, state)
+        return action
 
     # Action() - Must go throught algorithm before making move (needs betting aswell)
     pass
