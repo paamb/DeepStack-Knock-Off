@@ -53,7 +53,7 @@ class MonteCarlo:
         for hole_pair in all_hole_pairs:
             win_probability = self.evaluate_hole_pair_win_probability(
                 hole_pair, n_opponents, community_cards)
-            print(hole_pair, win_probability)
+            # print(hole_pair, win_probability)
             win_probabilities[hole_pair] = win_probability
         return win_probabilities
 
@@ -156,4 +156,4 @@ if __name__ == '__main__':
     community_cards = [Card('H', 'Q'), Card('H', 'T'), Card('H', 'J')]
     probability = montecarlo.evaluate_player_win_probability_after_pre_flop(
         player, community_cards, 1)
-    print(probability)
+    # print(probability)

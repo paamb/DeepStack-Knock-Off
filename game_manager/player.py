@@ -78,8 +78,6 @@ class HumanPlayer(Player):
         input_to_action = {action[:1]: action for action in possible_actions}
 
         # for action in possible_actions:
-        #     print(action + f'[{action[:1]}]')
-        # print('\n')
         selected_action = input(
             f'Select action [{list(input_to_action.keys())[0]}]: ')
 

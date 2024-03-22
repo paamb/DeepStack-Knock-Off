@@ -9,11 +9,11 @@ hole:
 	python3 -m poker_oracle.monte_carlo
 
 # Target for testing the rules manager
-# python3 -m game_manager.test_game_manager
+# 
 test:
 	@echo "Testing rules manager..."
 	python3 -m poker_oracle.hands_evaluator.tests.test_hands_evaluator
-
+	python3 -m game_manager.test_game_manager
 
 # Helper target for cleaning up any generated files, if necessary
 clean:

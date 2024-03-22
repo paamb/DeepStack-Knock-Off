@@ -81,7 +81,6 @@ class HandsEvaluator():
         unique_cards_counter = 1
         straight = False
         suit_count = {}
-        print(cards)
         for card in (cards):
             if card_values[card.value] < previous_value - 1:
                 # Return something indicating that we dont have a straight-flush
@@ -246,10 +245,8 @@ class HandsEvaluator():
 
         if not players_with_full_house:
             return []
-        # print(players_with_full_house)
         sorted_players_with_full_house = sorted(
             players_with_full_house, key=lambda x: (card_values[x[1]], card_values[x[2]]), reverse=True)
-        # print(sorted_players_with_full_house)
         best_full_house = sorted_players_with_full_house[0][1], sorted_players_with_full_house[0][2]
 
         best_players = [player_tuple[0] for player_tuple in players_with_full_house if (
