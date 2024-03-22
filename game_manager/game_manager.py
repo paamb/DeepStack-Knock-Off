@@ -148,7 +148,8 @@ class ActionManager():
 
     def perform_action(self, player: Player, action: str, current_bet: int = 0, bet: int = 2 * piv.small_blind):
         if not action in self.get_possible_actions(player, current_bet, bet):
-            raise ValueError
+            if action in ['C', 'B']:
+                action = 'A'
 
         update_starting_index = False
         if action == 'F':
