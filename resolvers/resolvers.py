@@ -25,9 +25,6 @@ class PureRolloutResolver(Resolver):
             player, state.community_cards, num_opponents=state.num_active_players - 1)
 
         # Want to add potsize later
-
-        print(win_probability)
-        input()
         expected_utility = []
         for action in state.possible_actions:
             utility = self.expected_utility(
