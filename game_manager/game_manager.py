@@ -305,7 +305,7 @@ class GameManager:
     def create_players(self):
         self.players = [HumanPlayer()
                         for _ in range(piv.number_of_human_players)]
-        self.players += [AIPlayer() for _ in range(piv.number_of_AI_players)]
+        self.players += [AIPlayer(hide_cards=True) for _ in range(piv.number_of_AI_players)]
 
     def set_round_manager(self):
         if piv.game == 'texasHoldem':

@@ -17,8 +17,9 @@ class UserInterface():
                 player_string = "BUSTED"
             else:
                 for card in player.hand:
+                    card_to_add = deck_matrix[(card.suit, card.value)] if not (player.hide_cards and not winners) else hidden_card
                     player_string = player_string + \
-                        deck_matrix[(card.suit, card.value)] + ' '
+                        card_to_add + ' '
                 player_string = player_string + ' ' + str(player.chips) + chips
 
             player_string = f"{player_string:20}"
