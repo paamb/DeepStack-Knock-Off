@@ -8,7 +8,15 @@ class State:
         self.pot = sum(
             player.betted_chips for player in round_manager.game_manager.players)
         self.players = round_manager.game_manager.players
+        self.active_players = self.get_active_players()
+        self.num_active_players = self.get_num_active_players()
         self.current_bet = round_manager.current_bet
+
+    def get_active_players(self):
+        return [player for player in self.players if not player.is_folded]
+
+    def get_num_active_players(self):
+        return len(self.get_active_players())
 
 
 class StateManager:
