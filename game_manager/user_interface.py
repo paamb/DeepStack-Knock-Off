@@ -67,7 +67,7 @@ class UserInterface():
         else:
             current_player = None
 
-        print("\033c")
+        # print("\033c")
 
         first_row_length = self.print_player_row(
             players_in_upper_row, current_player, winners)
@@ -93,6 +93,7 @@ class UserInterface():
         for action in possible_actions:
             print(ACTION_TO_PRETTY[action])
         print('\n')
+
 
 if __name__ == '__main__':
     # torstein = Player()

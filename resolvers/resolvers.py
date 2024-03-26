@@ -23,12 +23,13 @@ class PureRolloutResolver(Resolver):
         win_probability = self.get_win_probability_from_hole_cards(
             player, state.community_cards)
 
-        print(win_probability)
         # Want to add potsize later
-        expectation_value = 3 + np.tanh(win_probability - 0.5)*2
-        std_dev = 1
+        expectation_value = 3 + np.tanh(win_probability - 0.5)*5
+        std_dev = 0.5
+        print("EXPval:", expectation_value)
 
         x_value_for_action = np.random.normal(expectation_value, std_dev)
+        print("WIN:", win_probability, x_value_for_action)
 
         if x_value_for_action < 1:
             # Fold
