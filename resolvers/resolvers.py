@@ -22,22 +22,22 @@ class PureRolloutResolver(Resolver):
 
     def choose_action(self, player, state):
         win_probability = self.get_win_probability_from_hole_cards(
-            player, state.community_cards, num_opponents=len(state.players) - 1)
+            player, state.community_cards, num_opponents=state.num_active_players - 1)
 
         # Want to add potsize later
+
+        print(win_probability)
+        input()
         expected_utility = []
         for action in state.possible_actions:
-            utility = self.expected_utility(player, action, state.current_bet, win_probability, len(state.players))
+            utility = self.expected_utility(
+                player, action, state.current_bet, win_probability, len(state.players))
             expected_utility.append((action, utility))
 
-        expected_utility_sorted = sorted(expected_utility, key=lambda x: x[1], reverse=True)
-        print(expected_utility_sorted)
-        print(win_probability)
-        # print(state.current_bet)
-        input()
-        
-        return expected_utility_sorted[0][0]
+        expected_utility_sorted = sorted(
+            expected_utility, key=lambda x: x[1], reverse=True)
 
+        return expected_utility_sorted[0][0]
 
         expected_winnings = 3 + np.tanh(win_probability - 0.5)*5
         std_dev = 0.5
@@ -55,14 +55,10 @@ class PureRolloutResolver(Resolver):
             return 'B'
         else:
             return 'A'
-        
+
     def expected_utility(self, player, action, current_bet, win_probability, n_players):
         if action == 'F':
             win_probability = 0
-
-        print(f"chips: {player.chips}")
-        print(f"current_bet: {current_bet}")
-        print(f"betted_chips: {player.betted_chips}")
 
         hypothetical_won_money_estimate = {
             'F': 0,
@@ -78,12 +74,12 @@ class PureRolloutResolver(Resolver):
             'A': 0
         }
 
-
-        expected_utility = win_probability * (self.utility_of_money(hypothetical_won_money_estimate[action], player.risk_averseness)) + (1-win_probability) * self.utility_of_money(hypothetical_loss_money_estimate[action], player.risk_averseness)
+        expected_utility = win_probability * (self.utility_of_money(hypothetical_won_money_estimate[action], player.risk_averseness)) + (
+            1-win_probability) * self.utility_of_money(hypothetical_loss_money_estimate[action], player.risk_averseness)
         # expected_utility_from_normal_distribution = np.random.normal(expected_utility, 0.005)
         expected_utility_from_normal_distribution = expected_utility
         return expected_utility_from_normal_distribution
-    
+
     def utility_of_money(self, money, risk_averseness):
         money = max(money, 0)
         return money**risk_averseness
