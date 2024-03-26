@@ -17,7 +17,8 @@ class UserInterface():
                 player_string = "BUSTED"
             else:
                 for card in player.hand:
-                    card_to_add = deck_matrix[(card.suit, card.value)] if not (player.hide_cards and not winners) else hidden_card
+                    card_to_add = deck_matrix[(card.suit, card.value)] if not (
+                        player.hide_cards and not winners) else hidden_card
                     player_string = player_string + \
                         card_to_add + ' '
                 player_string = player_string + ' ' + str(player.chips) + chips
@@ -68,7 +69,7 @@ class UserInterface():
         else:
             current_player = None
 
-        # print("\033c")
+        print("\033c")
 
         first_row_length = self.print_player_row(
             players_in_upper_row, current_player, winners)
