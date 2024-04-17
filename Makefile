@@ -5,6 +5,9 @@ run:
 	@echo "Running game manager..."
 	python3 -m game_manager.game_manager
 
+expected:
+	python3 -m resolvers.resolvers
+
 hole:
 	python3 -m poker_oracle.monte_carlo
 

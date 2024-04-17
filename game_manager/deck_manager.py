@@ -29,12 +29,6 @@ class DeckManager():
         else:
             self.create_deck_of_cards_without_cards(invalid_cards)
 
-    # def __str__(self):
-    #     return self.cards
-
-    # def __repr__(self) -> str:
-    #     return self.__str__()
-
     def create_deck_of_cards(self):
         self.cards = [Card(suit, value)
                       for value in self.values for suit in self.suits]

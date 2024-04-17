@@ -23,6 +23,9 @@ class Player():
     def action():
         pass
 
+    def is_busted(self):
+        return self.chips == 0 and self.is_folded == True
+
     def receive_cards(self, cards: List[Card]):
         self.hand = self.hand + cards
 
@@ -95,7 +98,7 @@ class HumanPlayer(Player):
 
 class AIPlayer(Player):
 
-    def __init__(self, chips=piv.starting_chips_per_player, hide_cards=False, probability_of_pure_rollout=1.0, risk_averseness=0.5):
+    def __init__(self, chips=piv.starting_chips_per_player, hide_cards=False, probability_of_pure_rollout=1.0, risk_averseness=0.4):
         super().__init__(chips, hide_cards=hide_cards)
         self.probability_of_pure_rollout = probability_of_pure_rollout
         self.pure_rollout_resolver = PureRolloutResolver()
