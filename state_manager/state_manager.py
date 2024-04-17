@@ -1,22 +1,24 @@
 class State:
     def __init__(self, round_manager):
-        self.update_state(round_manager)
+        self.round_manager = round_manager
+        self.update_state()
         self.possible_actions = ['F', 'C', 'B', 'A']
 
-    def update_state(self, round_manager):
-        self.community_cards = round_manager.community_cards
+    def update_state(self):
+        self.community_cards = self.round_manager.community_cards
         self.pot = sum(
-            player.betted_chips for player in round_manager.game_manager.players)
-        self.players = round_manager.game_manager.players
-        self.active_players = self.get_active_players()
-        self.num_active_players = self.get_num_active_players()
-        self.current_bet = round_manager.current_bet
+            player.betted_chips for player in self.round_manager.game_manager.players)
+        self.players = self.round_manager.game_manager.players
+        self.remaining_players = self.round_manager.remaining_players()
+        self.num_remaining_players = self.round_manager.num_remaining_players()
+        self.pot_size_if_all_remaining_players_calls = self.round_manager.get_pot_size_if_all_remaining_players_calls()
+        self.pot_size_if_all_remaining_players_bets = self.round_manager.get_pot_size_if_all_remaining_players_bets()
 
-    def get_active_players(self):
-        return [player for player in self.players if not player.is_folded]
+    def get_amount_to_call(self, player):
+        return self.round_manager.get_amount_to_call(player)
 
-    def get_num_active_players(self):
-        return len(self.get_active_players())
+    def get_amount_to_bet(self, player):
+        return self.round_manager.get_amount_to_bet(player)
 
 
 class StateManager:

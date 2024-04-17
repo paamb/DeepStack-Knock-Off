@@ -24,6 +24,7 @@ class RoundManager:
         self.initialize_round()
 
     def initialize_round(self):
+        # Initialized for each new round
         self.current_bet = 2 * piv.small_blind
 
         self.collect_cards()
@@ -57,7 +58,10 @@ class RoundManager:
             player.receive_cards(cards)
 
     def remaining_players(self):
-        return list(filter(lambda player: not player.is_folded, self.game_manager.players))
+        return [player for player in self.game_manager.players if not player.is_folded]
+
+    def num_remaining_players(self):
+        return len(self.remaining_players())
 
     def players_with_betted_chips(self):
         return list(filter(lambda player: player.betted_chips > 0, self.game_manager.players))
@@ -90,6 +94,20 @@ class RoundManager:
             if current_player_index == len(self.game_manager.players):
                 current_player_index = 0
             number_of_actions = number_of_actions + 1
+
+    def get_amount_to_call(self, player):
+        return self.current_bet - player.betted_chips
+
+    def get_amount_to_bet(self, player):
+        return self.get_amount_to_call(player) + 2 * piv.small_blind
+
+    def get_pot_size_if_all_remaining_players_calls(self):
+        # Theoretical pot size used when calculated expected utility for PureRolloutResolver
+        return self.current_bet * self.num_remaining_players()
+
+    def get_pot_size_if_all_remaining_players_bets(self):
+        # Theoretical pot size used when calculated expected utility for PureRolloutResolver
+        return self.num_remaining_players() * (self.current_bet + 2 * piv.small_blind)
 
     def bet_small_blinds(self, player, n_small_blinds):
         bet_amount = piv.small_blind * n_small_blinds
@@ -305,7 +323,8 @@ class GameManager:
     def create_players(self):
         self.players = [HumanPlayer()
                         for _ in range(piv.number_of_human_players)]
-        self.players += [AIPlayer(hide_cards=True) for _ in range(piv.number_of_AI_players)]
+        self.players += [AIPlayer(hide_cards=True)
+                         for _ in range(piv.number_of_AI_players)]
 
     def set_round_manager(self):
         if piv.game == 'texasHoldem':
