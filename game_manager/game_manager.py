@@ -66,34 +66,51 @@ class RoundManager:
     def players_with_betted_chips(self):
         return list(filter(lambda player: player.betted_chips > 0, self.game_manager.players))
 
+    def display_possible_actions(self, player):
+        possible_actions = self.get_possible_actions(player)
+        self.game_manager.user_interface.display_possible_actions(
+            player, possible_actions, self.current_bet, piv.small_blind * 2)
+        
+    def get_and_perform_action(self, player):
+        state = self.state_manager.get_state(self)
+        action = player.action(state)
+        action_bet, update_starting_index = self.game_manager.action_manager.perform_action(
+            player, action, self.current_bet)
+        return action_bet, update_starting_index
+
+    def play_player_round(self, player):
+        
+        # this is where the action from a player is requested and performed
+        self.display_possible_actions(player)
+        action_bet, update_starting_index = self.get_and_perform_action(player)
+
+        if action_bet > self.current_bet:
+            self.current_bet = action_bet
+        return update_starting_index
+    
+    def increment_current_player_index_and_number_of_actions(self, current_player_index, number_of_actions):
+        current_player_index = current_player_index + 1
+        if current_player_index == len(self.game_manager.players):
+            current_player_index = 0
+        number_of_actions = number_of_actions + 1
+        return current_player_index, number_of_actions
+
     def round_of_actions(self):
         # a round continues until everyone have had a turn, and everyone have bet the same amount (or all in)
         current_player_index = self.starting_player_index
         number_of_actions = 0
         while not self.round_is_over(number_of_actions):
             player = self.game_manager.players[current_player_index]
+
             if not player.is_folded and not player.chips == 0:
                 self.game_manager.user_interface.display_state(
                     self.game_manager.players, self.community_cards, current_player_index)
-                # this is where the action from a player is requested and performed
-
-                possible_actions = self.get_possible_actions(player)
-                self.game_manager.user_interface.display_possible_actions(
-                    player, possible_actions, self.current_bet, piv.small_blind * 2)
-
-                state = self.state_manager.get_state(self)
-
-                action = player.action(state)
-                action_bet, update_starting_index = self.game_manager.action_manager.perform_action(
-                    player, action, self.current_bet)
-                if action_bet > self.current_bet:
-                    self.current_bet = action_bet
+                update_starting_index = self.play_player_round(player)
                 if update_starting_index:
                     self.starting_player_index = current_player_index
-            current_player_index = current_player_index + 1
-            if current_player_index == len(self.game_manager.players):
-                current_player_index = 0
-            number_of_actions = number_of_actions + 1
+                
+            current_player_index, number_of_actions =self.increment_current_player_index_and_number_of_actions(current_player_index, number_of_actions)
+            
 
     def get_amount_to_call(self, player):
         return self.current_bet - player.betted_chips
