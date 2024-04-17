@@ -80,10 +80,10 @@ class PureRolloutResolver(Resolver):
 
 
         expected_utility = win_probability * (self.utility_of_money(hypothetical_won_money_estimate[action], player.risk_averseness)) + (1-win_probability) * self.utility_of_money(hypothetical_loss_money_estimate[action], player.risk_averseness)
-        # expected_utility_from_normal_distribution = np.random.normal(expected_utility, 0.005)
         expected_utility_from_normal_distribution = expected_utility
         return expected_utility_from_normal_distribution
     
     def utility_of_money(self, money, risk_averseness):
+        # the utility of money is often non-linear
         money = max(money, 0)
         return money**risk_averseness

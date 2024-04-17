@@ -111,7 +111,6 @@ class RoundManager:
         return True
 
     def set_starting_player_index(self):
-        # TODO: set accurate starting player index
         self.starting_player_index = self.starting_player_index + 1
         if self.starting_player_index == len(self.game_manager.players):
             self.starting_player_index = 0
@@ -178,10 +177,11 @@ class TexasHoldemRoundManager(RoundManager):
 
     def play_preflop(self):
         super().deal_hole_cards(2)
-        self.bet_small_blinds(
-            self.game_manager.players[self.starting_player_index-2], 1)
-        self.bet_small_blinds(
-            self.game_manager.players[self.starting_player_index-1], 2)
+        # TOOO: choose the two previous active players, not just from player list (since all players, inluded busted players, are here)
+        player_small_blind, player_big_blind = self.get_small_and_big_blind_players()
+        
+        self.bet_small_blinds(player_small_blind, 1)
+        self.bet_small_blinds(player_big_blind, 2)
         self.round_of_actions()
 
     def play_flop(self):
@@ -203,6 +203,21 @@ class TexasHoldemRoundManager(RoundManager):
         self.finalize_round()
 
         self.set_starting_player_index()
+
+    def get_small_and_big_blind_players(self):
+        index = self.starting_player_index
+        small_blind_player = None
+        big_blind_player = None
+        while not small_blind_player:
+            if not self.game_manager.players[index].is_folded:
+                small_blind_player = self.game_manager.players[index]
+            index = index - 1
+        while not big_blind_player:
+            if not self.game_manager.players[index].is_folded:
+                big_blind_player = self.game_manager.players[index]
+            index = index - 1
+
+        return small_blind_player, big_blind_player
 
     def finalize_round(self):
         # show cards
