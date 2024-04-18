@@ -13,6 +13,10 @@ hole:
 
 # Target for testing the rules manager
 # 
+utility_matrix:
+	python3 -m poker_oracle.utility_matrix
+
+
 test:
 	@echo "Testing rules manager..."
 	python3 -m poker_oracle.hands_evaluator.tests.test_hands_evaluator
