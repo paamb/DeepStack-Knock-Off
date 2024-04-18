@@ -3,9 +3,6 @@ from game_manager.deck_manager import Card, DeckManager
 # from poker_oracle.hands_evaluator.utils import suits, ranks, card_values
 import csv
 
-# card_values = {'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
-#    '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2}
-
 card_values = {'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
                '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2, 'AL': 1}
 suits = ['C', 'D', 'H', 'S']
@@ -22,12 +19,14 @@ class MonteCarlo:
         return all_cards
 
     def get_all_possible_cards(self):
+        # Generates a list of cards as a string values ('C2') and sorts them
         all_cards = self.generate_all_cards()
         # Sorts all cards in
         sort_cards = sorted(all_cards, key=lambda x: (x[0], card_values[x[1]]))
         return sort_cards
 
     def get_all_possible_hole_pairs(self):
+        # List of hole pairs represented ['C2C3', 'C2C4'] to create the probabilites
         all_possible_cards = self.get_all_possible_cards()
         all_possible_hole_pair = []
         for i in range(len(all_possible_cards)):
@@ -37,6 +36,7 @@ class MonteCarlo:
         return all_possible_hole_pair
 
     def hole_pair_string_to_object(self, hole_pair_string):
+
         card_string_1 = hole_pair_string[:2]
         card_string_2 = hole_pair_string[2:]
 
@@ -45,7 +45,7 @@ class MonteCarlo:
         return [card_1, card_2]
 
     def write_probability_dictionary_to_file(self, win_probabilites, filename='hole_pair_win_probability'):
-        # 'a' mode for appending to the file
+        # Writes the # Poker Cheat-Sheet Generator to file
         with open(f'{filename}.csv', mode='w', newline='') as file:
             writer = csv.writer(file)
             for key, probability in win_probabilites.items():
@@ -77,6 +77,7 @@ class MonteCarlo:
 
     def get_all_hole_pair_classes(self):
         all_hole_pairs = self.get_all_possible_hole_pairs()
+        print(len(all_hole_pairs))
         found_hole_pair_classes = {}
         hole_pair_representatives = []
         for hole_pair in all_hole_pairs:
@@ -87,10 +88,11 @@ class MonteCarlo:
         return hole_pair_representatives
 
     def evaluate_all_hole_pair_win_probabilities_classes(self):
+        # Poker Cheat-Sheet Generator
         all_class_representative_hole_pairs = self.get_all_hole_pair_classes()
+        print(all_class_representative_hole_pairs)
         win_probabilites_for_hole_pair_representing_classes = self.evaluate_all_hole_pair_win_probabilities(
             all_class_representative_hole_pairs)
-
         win_probabilites_for_classes = {}
         for hole_pair_representing_class, probability in win_probabilites_for_hole_pair_representing_classes.items():
             hole_pair_class = self.hole_pair_to_class(
@@ -147,7 +149,7 @@ class MonteCarlo:
 
             if player_1 in winner:
                 num_player_1_wins += 1/(len(winner))
-            # print("Loss: ", )
+
             self.opponents_hand_over_cards(deck_manager, opponents)
             deck_manager.receive_cards(public_cards)
         return num_player_1_wins / n_rollouts
@@ -155,12 +157,22 @@ class MonteCarlo:
 
 if __name__ == '__main__':
     montecarlo = MonteCarlo()
-    win_probabilites_for_classes = montecarlo.evaluate_all_hole_pair_win_probabilities_classes()
-    montecarlo.write_probability_dictionary_to_file(
-        win_probabilites_for_classes)
-    player = Player()
-    player.hand = [Card('H', '9'), Card('H', 'K')]
-    community_cards = [Card('H', 'Q'), Card('H', 'T'), Card('H', 'J')]
-    probability = montecarlo.evaluate_player_win_probability_after_pre_flop(
-        player, community_cards, 1)
-    print(probability)
+    # win_probabilites_for_classes = montecarlo.evaluate_all_hole_pair_win_probabilities_classes()
+    # montecarlo.write_probability_dictionary_to_file(
+    #     win_probabilites_for_classes)
+    
+    card = Card('C', '5')
+
+    placard_1 = card[:2]
+
+
+    string_card = str(card)
+
+
+    print(string_card)
+    # player = Player()
+    # player.hand = [Card('H', '9'), Card('H', 'K')]
+    # community_cards = [Card('H', 'Q'), Card('H', 'T'), Card('H', 'J')]
+    # probability = montecarlo.evaluate_player_win_probability_after_pre_flop(
+    #     player, community_cards, 1)
+    # print(probability)
