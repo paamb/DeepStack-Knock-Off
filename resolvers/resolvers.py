@@ -67,6 +67,7 @@ class PureRolloutResolver(Resolver):
         return expected_utility_from_normal_distribution
 
     def utility_of_money(self, money, risk_averseness):
+        # the utility of money is often non-linear
         money = max(money, 0)
         return money**risk_averseness
 
