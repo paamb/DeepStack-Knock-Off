@@ -3,14 +3,52 @@ from poker_oracle.monte_carlo import MonteCarlo
 from game_manager.pivotal_parameters import pivotal_parameters as piv
 
 
+class TreeNode():
+    pass
+
+class PlayerNode(TreeNode):
+    # Consider possible actions
+    # Contains strategy matrix
+    pass
+
+class EndNode(TreeNode):
+    # Showdown?
+
+    pass
+
+class ChanceNode(TreeNode):
+    pass    
+
+
 class Resolver():
     def __init__(self) -> None:
         self.monte_carlo = MonteCarlo()
     pass
 
 
+
+
 class DeepStackResolver(Resolver):
-    pass
+
+    def generate_initial_range(self):
+        n = 1326
+        r = np.ones(n)
+        r /= np.sum(r)
+        return r
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.r_1 = self.generate_initial_range()
+        self.r_2 = self.generate_initial_range()
+
+
+    def generate_initial_subtree(self, s, end_stage, end_depth):
+        
+        pass
+
+    def resolve(self, s, r_1, r_2, end_stage, end_depth, t): 
+        # s = state, r_1 = range of player 1, r_2 = range of player 2, T = number of rollouts
+        root = self.generate_initial_subtree(s, end_stage, end_depth)
 
 
 class PureRolloutResolver(Resolver):
