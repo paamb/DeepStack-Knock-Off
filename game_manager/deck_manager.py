@@ -55,6 +55,10 @@ class DeckManager():
         self.cards = cards_left
 
         return deal_cards
+    
+    def get_n_cards_not_in_invalid_cards(self, invalid_cards, n):
+        valid_cards = [card for card in self.cards if card not in invalid_cards]
+        return random.sample(valid_cards, n)
 
     def receive_cards(self, cards):
         self.cards = self.cards + cards

@@ -1,5 +1,5 @@
 from typing import List
-from .player import Player, HumanPlayer, AIPlayer
+from game_manager.player import Player, HumanPlayer, AIPlayer
 from poker_oracle.hands_evaluator.hands_evaluator import HandsEvaluator
 from state_manager.state_manager import StateManager, State
 from .deck_manager import DeckManager, Card
