@@ -202,6 +202,8 @@ class ActionManager():
             if player.chips + player.betted_chips > current_bet:
                 update_starting_index = True
             current_bet = player.all_in()
+        else:
+            raise ValueError('No action was performed')
 
         return current_bet, update_starting_index
 

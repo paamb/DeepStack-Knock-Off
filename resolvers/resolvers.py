@@ -18,8 +18,8 @@ class PlayerNode(TreeNode):
     def calculate_weighted_average(self, value_vectors_from_children):
         a = self.strategy_matrix
         b = value_vectors_from_children.T
-        np.einsum('ij,ij->i', np.dot(a, b), a)
-        pass
+        value_vector = np.einsum('ij,ij->i', a, b)
+        return value_vector
 
     def get_opponent(self):
         opponent = list(set(self.state.players) - set([self.current_player]))[0]
@@ -29,9 +29,26 @@ class PlayerNode(TreeNode):
     def initialize_strategy_matrix(self, legal_actions):
         number_of_legal_actions = len(legal_actions)
         number_of_possible_hands = 1326
-        self.strategy_matrix = np.full((number_of_possible_hands, number_of_legal_actions), fill_value=1/number_of_legal_actions)
-        print(self.strategy_matrix, type(self.strategy_matrix))
+        # self.strategy_matrix = np.full((number_of_possible_hands, number_of_legal_actions), fill_value=1/number_of_legal_actions)
+        self.strategy_matrix = np.random.rand(number_of_possible_hands, number_of_legal_actions)
 
+    def update_ranges(self, player_ranges_for_action, action_index):
+        player_ranges_for_action = dict(player_ranges_for_action)
+        r_p = player_ranges_for_action[self.current_player]
+        player_ranges_for_action[self.current_player] = self.bayesian_range_update(r_p, action_index, self.strategy_matrix)
+        return player_ranges_for_action
+
+    def bayesian_range_update(self, range, action_index, strategy_matrix):
+        action_column = strategy_matrix[:, action_index]
+        sum_of_action_column = np.sum(action_column)
+        sum_of_all_actions = np.sum(strategy_matrix)
+        p_of_action = sum_of_action_column / sum_of_all_actions
+
+        range = action_column * range / p_of_action 
+
+        return range
+
+    
 
     # Consider possible actions
     # Contains strategy matrix
@@ -39,7 +56,7 @@ class PlayerNode(TreeNode):
 
 class EndNode(TreeNode):
     def get_value_vectors(self): 
-        pass
+        return np.random.rand(1326), np.random.rand(1326)
     # Showdown?
     # Fold or showdown parameter
 
@@ -54,7 +71,16 @@ class ShowDownNode(EndNode):
     pass
 
 class ChanceNode(TreeNode):
+
+    def calculate_weighted_average(self, value_vectors_from_children):
+        return np.mean(value_vectors_from_children, axis=0)
     pass    
+
+    def update_ranges(self, player_ranges_for_action, action_index):
+        # TODO: fjern invalid cards
+        cards, child = self.child_nodes[action_index]
+
+        return dict(player_ranges_for_action)
 
 
 class Resolver():
@@ -83,8 +109,11 @@ class DeepStackResolver(Resolver):
         if number_of_allowed_bets == 0 and isinstance(node, PlayerNode):
             # Now allowed actions will only be ['F', 'C'] or ['F', 'A']
             node.state.legal_actions = node.state.legal_actions[:2]
+
+        if isinstance(node, PlayerNode):
+            node.initialize_strategy_matrix(node.state.legal_actions)
         for action in node.state.legal_actions:
-            print(action, node)
+            # print(action, node)
             child_node = self.create_child_node(node, action, is_first_layer)
             node.child_nodes.append((action, child_node))
             if action == 'B':
@@ -176,7 +205,6 @@ class DeepStackResolver(Resolver):
         opponent = node.get_opponent()
         opponent_chips, opponent_betted_chips = next_state.chips_per_player[opponent]
 
-        input(str(opponent_betted_chips) + ' ' + str(all_in_amount))
         return all_in_amount > opponent_betted_chips and not opponent_chips == 0
 
     def end_or_chance_node(self, next_state, node):
@@ -190,7 +218,8 @@ class DeepStackResolver(Resolver):
     # Fold, Call, All-in
 
     def choose_action(self, player, state): 
-        resolver = self.resolve(state, player, 1, 2, 3)
+        resolver = self.resolve(state, player, self.r_1, self.r_2, 3)
+        # TODO: return action
 
     def handle_previous_node_was_chance_node(self, node, next_state, action):
         next_node = NeuralNetNode(next_state)
@@ -205,51 +234,52 @@ class DeepStackResolver(Resolver):
         
         if isinstance(next_node, PlayerNode):
             next_state.set_legal_actions_from_player_node(next_node)
-            next_node.initialize_strategy_matrix(next_state.legal_actions)
         elif isinstance(next_node, ChanceNode):
             num_cards_to_deal = self.get_num_cards_to_deal_in_stage(next_node)
             next_state.set_legal_actions_from_chance_node(next_node, self.simulation_deck, num_cards_to_deal)
         
         next_node.state = next_state
-
-        if isinstance(next_node, EndNode) or isinstance(next_node, ChanceNode):
-            print(action, next_node.state.legal_actions, type(next_node))
-        else:
-            print(action, next_node.state.legal_actions, type(next_node), next_node.current_player)
-
-        input()
         return next_node
 
-
-
-    def subtree_traversal_rollout(self, node, r_1, r_2):
+    def subtree_traversal_rollout(self, node, player_ranges):
         if isinstance(node, EndNode):
             return node.get_value_vectors()
         
-        player_1_value_vectors = np.array([])
-        player_2_value_vectors = np.array([])
-        for child_node in node.child_nodes:
-            v_1, v_2 = self.subtree_traversal_rollout(child_node, r_1, r_2)
+        player_1_value_vectors = []
+        player_2_value_vectors = []
+        for action_index, (action, child_node) in enumerate(node.child_nodes):
+            # chance node has its own way of updating range, player node updates with Bayesian Update
+            print('BEFORE RANGES')
+            print(player_ranges)
+            player_ranges_for_action = node.update_ranges(player_ranges, action_index)
+            print('AFTER RANGES')
+            print(player_ranges_for_action)
+            v_1, v_2 = self.subtree_traversal_rollout(child_node, player_ranges_for_action)
             player_1_value_vectors.append(v_1)
             player_2_value_vectors.append(v_2)
-    
+        player_1_value_vectors = np.array(player_1_value_vectors)
+        player_2_value_vectors = np.array(player_2_value_vectors)
+        
+        player_1_values = node.calculate_weighted_average(player_1_value_vectors)
+        player_2_values = node.calculate_weighted_average(player_2_value_vectors)
 
-        # node.calculate_weighted_average(value_vectors_from_children)
+        return player_1_values, player_2_values
 
-
-
-
-        #     # Do something
-        #     pass
-        # else:
-        #     for child_node in node.child_nodes:
-
+    def update_strategy(self, node):
+        pass
 
     def resolve(self, s, player, r_1, r_2, t): 
         # s = state, r_1 = range of player 1, r_2 = range of player 2, T = number of rollouts
         root = self.generate_initial_subtree(s, player, piv.number_of_allowed_bets_resolver)
+        
+        opponent = root.get_opponent()
+        player_ranges = {
+            root.current_player: r_1,
+            opponent: r_2,
+        }
         for t in range(piv.number_of_rollouts):
-            v_1, v_2 = self.subtree_traversal_rollout(root)
+            v_1, v_2 = self.subtree_traversal_rollout(root, player_ranges)
+            self.update_strategy(root)
 
 
 
