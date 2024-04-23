@@ -63,14 +63,14 @@ class DeepStackResolver(Resolver):
         if number_of_allowed_bets == 0 and isinstance(node, PlayerNode):
             # Now allowed actions will only be ['F', 'C'] or ['F', 'A']
             node.state.legal_actions = node.state.legal_actions[:2]
-        # print(node.state.community_cards, node, node.state)
+        # print(node.state.legal_actions)
         for action in node.state.legal_actions:
-            if isinstance(node, EndNode):
-                print("NOOOOOOOOOOOOOO", action, node)
+            # if isinstance(node, EndNode):
+                # print("NOOOOOOOOOOOOOO", action, node)
             child_node = self.create_child_node(node, action, is_first_layer)
             node.child_nodes.append((action, child_node))
             if action == 'B':
-                print("Coming in here")
+                # print("Coming in here")
                 self.generate_subtree_from_node(child_node, number_of_allowed_bets-1, False)
             else:
                 self.generate_subtree_from_node(child_node, number_of_allowed_bets, False)
@@ -132,21 +132,38 @@ class DeepStackResolver(Resolver):
         
         elif action == 'C':
             # TODO: Change to fit neural network later
-            if self.is_river_stage(node):
-                next_node = EndNode(next_state)
-            else:
-                next_node = ChanceNode(next_state)
+            next_node = self.end_or_chance_node(next_state, node)
 
-        else:
-            current_bet = next_state.current_bet
-            player_chips, player_betted_chips = next_state.chips_per_player[node.current_player]
-
-            # Player has gone all-in. This is not a call-all-in
-            if player_betted_chips == current_bet:
+        elif action == 'A':
+            if self.other_player_should_make_move_after_all_in(next_state, node):
                 next_node = self.create_player_node_with_swapped_current_player(node, next_state)
             else:
-                next_node = ChanceNode(next_state)
+                next_node = self.end_or_chance_node(next_state, node)
+
+        else:
+            # current_bet = next_state.current_bet
+            # player_chips, player_betted_chips = next_state.chips_per_player[node.current_player]
+
+            # # Player has gone all-in. This is not a call-all-in
+            # if player_betted_chips == current_bet:
+            #     next_node = self.create_player_node_with_swapped_current_player(node, next_state)
+            # else:
+            next_node = ChanceNode(next_state)
         return next_node
+    
+    def other_player_should_make_move_after_all_in(self, next_state, node):
+        all_in_amount = next_state.chips_per_player[node.current_player][1]
+        opponent = node.get_opponent()
+        opponent_chips, opponent_betted_chips = next_state.chips_per_player[opponent]
+
+        input(str(opponent_betted_chips) + ' ' + str(all_in_amount))
+        return all_in_amount > opponent_betted_chips and not opponent_chips == 0
+
+    def end_or_chance_node(self, next_state, node):
+        if self.is_river_stage(node):
+            return EndNode(next_state)
+        else:
+            return ChanceNode(next_state)
     
     # Fold, Call, Bet, All-in
     # Fold, All-in
@@ -173,6 +190,13 @@ class DeepStackResolver(Resolver):
             next_state.set_legal_actions_from_chance_node(next_node, self.simulation_deck, num_cards_to_deal)
         
         next_node.state = next_state
+
+        if isinstance(next_node, EndNode) or isinstance(next_node, ChanceNode):
+            print(action, next_node.state.legal_actions, type(next_node))
+        else:
+            print(action, next_node.state.legal_actions, type(next_node), next_node.current_player)
+
+        input()
         return next_node
 
 

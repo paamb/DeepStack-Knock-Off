@@ -1,4 +1,5 @@
 from game_manager.pivotal_parameters import pivotal_parameters as piv
+
 class State:
     # def __init__(self):
 
@@ -27,7 +28,7 @@ class State:
         # print(new_community_cards)
         self.community_cards = list(previous_state.community_cards)
         self.pot = previous_state.pot
-        self.chips_per_player = previous_state.chips_per_player
+        self.chips_per_player = dict(previous_state.chips_per_player)
         self.current_bet = previous_state.current_bet
         self.legal_actions = []
         self.players = previous_state.players
@@ -147,13 +148,13 @@ class StateManager:
         next_state = State()
         next_state.set_state_from_previous_state(previous_state)
         if node_type == 'chance_node':
-            print("Coming in here")
+            # print("Coming in here")
             self.next_state_after_chance_node(next_state, action)
         elif node_type == 'player_node':
             self.next_state_after_player_node(node.current_player, next_state, previous_state, action)
         # End node. Not coming in here
         else: 
-            print("End node")
+            # print("End node")
             self.next_state_after_end_node()
         
         return next_state
