@@ -76,9 +76,16 @@ class ChanceNode(TreeNode):
         return np.mean(value_vectors_from_children, axis=0)
     pass    
 
-    def update_ranges(self, player_ranges_for_action, action_index):
-        # TODO: fjern invalid cards
-        cards, child = self.child_nodes[action_index]
+    def update_ranges(self, player_ranges_for_action, action_index, card_to_range_indexes_to_zero):
+        player_ranges_for_action = dict(player_ranges_for_action)
+        cards, _ = self.child_nodes[action_index]
+        for card in cards:
+            indexes_to_zero = card_to_range_indexes_to_zero[str(card)]
+            for player in player_ranges_for_action.keys():
+                player_ranges_for_action[player][indexes_to_zero] = 0
+            
+        for player, range in player_ranges_for_action.items():
+            player_ranges_for_action[player] = range / np.sum(range)
 
         return dict(player_ranges_for_action)
 
@@ -103,7 +110,26 @@ class DeepStackResolver(Resolver):
         super().__init__()
         self.r_1 = self.generate_initial_range()
         self.r_2 = self.generate_initial_range()
+        self.state_manager = StateManager()
+        self.simulation_deck = DeckManager()
+        self.card_to_range_indexes_to_zero = self.generate_card_to_range_indexes_to_zero_dict()
 
+    def generate_card_to_range_indexes_to_zero_dict(self):
+        all_hole_pairs = self.monte_carlo.get_all_possible_hole_pairs()
+
+        card_to_range_indexes_to_zero = {}
+        for card in self.simulation_deck.cards:
+            card_str = str(card)
+            card_to_range_indexes_to_zero[card_str] = []
+            for i, card_pair in enumerate(all_hole_pairs):
+                if card_str == card_pair[:2] or card_str == card_pair[2:]:
+                    card_to_range_indexes_to_zero[card_str].append(i)
+
+        assert len(card_to_range_indexes_to_zero.keys()) == 52
+        for key, value in card_to_range_indexes_to_zero.items():
+            assert len(value) == 51
+
+        return card_to_range_indexes_to_zero
 
     def generate_subtree_from_node(self, node, number_of_allowed_bets, is_first_layer=False):
         if number_of_allowed_bets == 0 and isinstance(node, PlayerNode):
@@ -128,8 +154,6 @@ class DeepStackResolver(Resolver):
     def generate_initial_subtree(self, state, player, number_of_allowed_bets):
         root = PlayerNode(player, state)
         state.set_legal_actions_from_player_node(root)
-        self.state_manager = StateManager()
-        self.simulation_deck = DeckManager()
         self.generate_subtree_from_node(root, number_of_allowed_bets, True)
         return root
         # self.simulation_deck
@@ -249,11 +273,12 @@ class DeepStackResolver(Resolver):
         player_2_value_vectors = []
         for action_index, (action, child_node) in enumerate(node.child_nodes):
             # chance node has its own way of updating range, player node updates with Bayesian Update
-            print('BEFORE RANGES')
-            print(player_ranges)
-            player_ranges_for_action = node.update_ranges(player_ranges, action_index)
-            print('AFTER RANGES')
-            print(player_ranges_for_action)
+            if isinstance(node, PlayerNode):
+                player_ranges_for_action = node.update_ranges(player_ranges, action_index)
+            elif isinstance(node, ChanceNode):
+                player_ranges_for_action = node.update_ranges(player_ranges, action_index, self.card_to_range_indexes_to_zero)
+            else:
+                raise ValueError('Somthing went wrong')
             v_1, v_2 = self.subtree_traversal_rollout(child_node, player_ranges_for_action)
             player_1_value_vectors.append(v_1)
             player_2_value_vectors.append(v_2)
