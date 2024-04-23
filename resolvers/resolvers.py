@@ -15,11 +15,22 @@ class PlayerNode(TreeNode):
         super().__init__(state) 
         self.current_player = current_player
 
+    def calculate_weighted_average(self, value_vectors_from_children):
+        a = self.strategy_matrix
+        b = value_vectors_from_children.T
+        np.einsum('ij,ij->i', np.dot(a, b), a)
+        pass
 
     def get_opponent(self):
         opponent = list(set(self.state.players) - set([self.current_player]))[0]
         # print(opponent)
         return opponent
+    
+    def initialize_strategy_matrix(self, legal_actions):
+        number_of_legal_actions = len(legal_actions)
+        number_of_possible_hands = 1326
+        self.strategy_matrix = np.full((number_of_possible_hands, number_of_legal_actions), fill_value=1/number_of_legal_actions)
+        print(self.strategy_matrix, type(self.strategy_matrix))
 
 
     # Consider possible actions
@@ -27,9 +38,19 @@ class PlayerNode(TreeNode):
     pass
 
 class EndNode(TreeNode):
+    def get_value_vectors(self): 
+        pass
     # Showdown?
     # Fold or showdown parameter
 
+class FoldNode(EndNode):
+
+    pass
+
+class NeuralNetNode(EndNode):
+    pass
+
+class ShowDownNode(EndNode):
     pass
 
 class ChanceNode(TreeNode):
@@ -59,14 +80,11 @@ class DeepStackResolver(Resolver):
 
 
     def generate_subtree_from_node(self, node, number_of_allowed_bets, is_first_layer=False):
-        # print(number_of_allowed_bets)
         if number_of_allowed_bets == 0 and isinstance(node, PlayerNode):
             # Now allowed actions will only be ['F', 'C'] or ['F', 'A']
             node.state.legal_actions = node.state.legal_actions[:2]
-        # print(node.state.legal_actions)
         for action in node.state.legal_actions:
-            # if isinstance(node, EndNode):
-                # print("NOOOOOOOOOOOOOO", action, node)
+            print(action, node)
             child_node = self.create_child_node(node, action, is_first_layer)
             node.child_nodes.append((action, child_node))
             if action == 'B':
@@ -90,7 +108,9 @@ class DeepStackResolver(Resolver):
     def get_next_state(self, node, action):
         node_types = {PlayerNode: 'player_node',
                       ChanceNode: 'chance_node',
-                      EndNode: 'end_node'}
+                      FoldNode: 'end_node',
+                      ShowDownNode: 'end_node',
+                      NeuralNetNode: 'end_node'}
         
         node_type = node_types[type(node)]
 
@@ -125,7 +145,7 @@ class DeepStackResolver(Resolver):
 
     def handle_previous_node_was_player_node(self, node, next_state, action, is_first_layer=False):
         if action == 'F':
-            next_node = EndNode(next_state)
+            next_node = FoldNode(next_state)
         
         elif action == 'B' or action == 'C' and is_first_layer:
             next_node = self.create_player_node_with_swapped_current_player(node, next_state)
@@ -161,7 +181,7 @@ class DeepStackResolver(Resolver):
 
     def end_or_chance_node(self, next_state, node):
         if self.is_river_stage(node):
-            return EndNode(next_state)
+            return ShowDownNode(next_state)
         else:
             return ChanceNode(next_state)
     
@@ -173,7 +193,7 @@ class DeepStackResolver(Resolver):
         resolver = self.resolve(state, player, 1, 2, 3)
 
     def handle_previous_node_was_chance_node(self, node, next_state, action):
-        next_node = EndNode(next_state)
+        next_node = NeuralNetNode(next_state)
         return next_node
 
     def create_child_node(self, node, action, is_first_layer):
@@ -185,6 +205,7 @@ class DeepStackResolver(Resolver):
         
         if isinstance(next_node, PlayerNode):
             next_state.set_legal_actions_from_player_node(next_node)
+            next_node.initialize_strategy_matrix(next_state.legal_actions)
         elif isinstance(next_node, ChanceNode):
             num_cards_to_deal = self.get_num_cards_to_deal_in_stage(next_node)
             next_state.set_legal_actions_from_chance_node(next_node, self.simulation_deck, num_cards_to_deal)
@@ -201,9 +222,34 @@ class DeepStackResolver(Resolver):
 
 
 
+    def subtree_traversal_rollout(self, node, r_1, r_2):
+        if isinstance(node, EndNode):
+            return node.get_value_vectors()
+        
+        player_1_value_vectors = np.array([])
+        player_2_value_vectors = np.array([])
+        for child_node in node.child_nodes:
+            v_1, v_2 = self.subtree_traversal_rollout(child_node, r_1, r_2)
+            player_1_value_vectors.append(v_1)
+            player_2_value_vectors.append(v_2)
+    
+
+        # node.calculate_weighted_average(value_vectors_from_children)
+
+
+
+
+        #     # Do something
+        #     pass
+        # else:
+        #     for child_node in node.child_nodes:
+
+
     def resolve(self, s, player, r_1, r_2, t): 
         # s = state, r_1 = range of player 1, r_2 = range of player 2, T = number of rollouts
         root = self.generate_initial_subtree(s, player, piv.number_of_allowed_bets_resolver)
+        for t in range(piv.number_of_rollouts):
+            v_1, v_2 = self.subtree_traversal_rollout(root)
 
 
 

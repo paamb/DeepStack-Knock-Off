@@ -7,6 +7,7 @@ class PivotalParameters:
     small_blind = 5.0
     number_of_allowed_bets_resolver = 2
     number_of_chance_node_children = 5
+    number_of_rollouts = 1
 
 
 pivotal_parameters = PivotalParameters()
