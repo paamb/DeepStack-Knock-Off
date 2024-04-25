@@ -151,11 +151,19 @@ class DeepStackResolver(Resolver):
         r /= np.sum(r)
         return r
 
+    # def initialize_player_range_dictionary(self, root):
+    #     r_1 = self.generate_initial_range()
+    #     r_2 = self.generate_initial_range()
+    #     player_ranges = {
+    #         root.current_player: r_1,
+    #         opponent: r_2,
+    #     }
+
     def __init__(self) -> None:
         from poker_oracle.utility_matrix import UtilityMatrixHandler
         super().__init__()
-        self.r_1 = self.generate_initial_range()
-        self.r_2 = self.generate_initial_range()
+        r_1 = self.generate_initial_range()
+        r_2 = self.generate_initial_range()
         self.state_manager = StateManager()
         self.simulation_deck = DeckManager()
         self.utility_matrix_handler = UtilityMatrixHandler()
@@ -282,8 +290,8 @@ class DeepStackResolver(Resolver):
     # Fold, Call, All-in
 
     def choose_action(self, player, state): 
-        resolver = self.resolve(state, player, self.r_1, self.r_2, 3)
-        # TODO: return action
+        player_action, updated_r_1, r_2 = self.resolve(state, player, self.r_1, self.r_2, 1)
+        return player_action
 
     def handle_previous_node_was_chance_node(self, node, next_state, action):
         next_node = NeuralNetNode(next_state)
@@ -347,6 +355,17 @@ class DeepStackResolver(Resolver):
 
         return player_ranges
 
+
+    def get_action_from_strategy(self, player, mean_strategy, state):
+        player_hand_to_string = player.get_player_hand_as_string()
+        hole_pair_index = self.monte_carlo.get_hole_pair_index_in_all_possible_hole_pairs_list(player_hand_to_string)
+        strategy_given_hole_pair = mean_strategy[hole_pair_index]
+
+        index_of_best_action = np.argmax(strategy_given_hole_pair)[0]
+        best_action = state.legal_actions()[index_of_best_action]
+        return best_action, index_of_best_action
+
+
     def resolve(self, s, player, r_1, r_2, t): 
         # s = state, r_1 = range of player 1, r_2 = range of player 2, T = number of rollouts
         root = self.generate_initial_subtree(s, player, piv.number_of_allowed_bets_resolver)
@@ -356,10 +375,20 @@ class DeepStackResolver(Resolver):
             root.current_player: r_1,
             opponent: r_2,
         }
+
+        all_strategies = []
         for t in range(piv.number_of_rollouts):
             player_ranges = self.initial_player_range_update(player_ranges, root.state.community_cards)
             v_1, v_2 = self.subtree_traversal_rollout(root, player_ranges)
-            self.update_strategy(root)
+            strategy_t = self.update_strategy(root)
+            all_strategies.append(strategy_t)
+        all_strategies = np.array(all_strategies)
+        mean_strategy = np.mean(all_strategies)
+        player_action, action_index = self.get_action_from_strategy(player, mean_strategy, root.state) 
+        r_1_given_action = root.bayesian_range_update(player_ranges[root.current_player], action_index, mean_strategy)
+
+        # self.r_1 = 
+        return player_action, r_1_given_action, r_2
 
 
 

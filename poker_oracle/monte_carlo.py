@@ -35,6 +35,12 @@ class MonteCarlo:
                     all_possible_cards[i] + all_possible_cards[j])
         return all_possible_hole_pair
 
+    def get_hole_pair_index_in_all_possible_hole_pairs_list(self, hole_pair):
+        all_possible_hole_pairs = self.get_all_possible_hole_pairs()
+        for i in range(len(all_possible_hole_pairs)):
+            if hole_pair == all_possible_hole_pairs[i]:
+                return i
+
     def hole_pair_string_to_object(self, hole_pair_string):
 
         card_string_1 = hole_pair_string[:2]
