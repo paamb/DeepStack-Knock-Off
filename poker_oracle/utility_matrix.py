@@ -5,12 +5,40 @@ from game_manager.deck_manager import Card
 
 import numpy as np
 
+
+class UtilityMatrixStorage:
+    def __init__(self) -> None:
+        self.utility_matrices = {}
+    
+    def add_matrix(self, cards, utility_matrix):
+        card_key = self.cards_as_string(cards)
+        self.utility_matrices[card_key] = utility_matrix
+
+    def is_utility_matrix_created(self, cards):
+        card_key = self.cards_as_string(cards)
+        print(card_key)
+        print(self.utility_matrices.keys())
+        return card_key in self.utility_matrices.keys()
+
+    def get_utility_matrix(self, cards):
+        card_key = self.cards_as_string(cards)
+        return self.utility_matrices[card_key]
+
+    def cards_as_string(self, cards):
+        hand_as_string = [str(card) for card in cards]
+        card_values = {'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
+               '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2, 'AL': 1}
+        sorted_cards = sorted(hand_as_string, key=lambda x: (x[0], card_values[x[1]]))
+        sorted_cars_as_string = ''.join(sorted_cards)
+        return sorted_cars_as_string
+
 class UtilityMatrixHandler:
     NUMBER_OF_HOLE_PAIRS = 1326
 
     def __init__(self):
         self.utility_matrix = self.generate_empty_utility_matrix()
         self.all_hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        self.storage = UtilityMatrixStorage()
         self.player_1 = Player()
         self.player_2 = Player()
 
@@ -23,7 +51,7 @@ class UtilityMatrixHandler:
         return np.array([[0 for j in range(self.NUMBER_OF_HOLE_PAIRS)] for i in range(self.NUMBER_OF_HOLE_PAIRS)])
 
     def generate_utility_matrix(self, public_cards):
-        self.utility_matrix = self.generate_empty_utility_matrix()
+        utility_matrix = self.generate_empty_utility_matrix()
 
         for player_1_card_index in range(self.NUMBER_OF_HOLE_PAIRS):
             player_1_cards = [self.all_hole_pairs[player_1_card_index][:2], self.all_hole_pairs[player_1_card_index][2:]]
@@ -37,15 +65,24 @@ class UtilityMatrixHandler:
                     self.player_2.hand = self.get_player_cards(self.player_2, player_2_cards)
                     utility = self.calculate_utility(public_cards)
                 
-                self.set_inverse_mirrored_utilities(player_1_card_index, player_2_card_index, utility)
+                self.set_inverse_mirrored_utilities(player_1_card_index, player_2_card_index, utility, utility_matrix)
+        return utility_matrix
 
     def get_utility_matrix(self, public_cards):
-        self.generate_utility_matrix(public_cards)
-        return np.array(self.utility_matrix)
+        if self.storage.is_utility_matrix_created(public_cards): 
+            print("UtiityMatrix exists")
+            utility_matrix = self.storage.get_utility_matrix(public_cards)
+        else:
+            print("creating_utility_matrix")
+            utility_matrix = self.generate_utility_matrix(public_cards)
+            self.storage.add_matrix(public_cards, utility_matrix)
 
-    def set_inverse_mirrored_utilities(self, player_1_card_index, player_2_card_index, value):
-        self.utility_matrix[player_1_card_index][player_2_card_index] = value
-        self.utility_matrix[player_2_card_index][player_1_card_index] = -value
+        return utility_matrix
+
+    def set_inverse_mirrored_utilities(self, player_1_card_index, player_2_card_index, value, utility_matrix):
+        utility_matrix[player_1_card_index][player_2_card_index] = value
+        utility_matrix[player_2_card_index][player_1_card_index] = -value
+        return utility_matrix
 
 
     def calculate_utility(self, public_cards):

@@ -17,14 +17,15 @@ class Player():
         self.chips = chips
         self.betted_chips = 0
         self.is_folded = False
-        self.hide_cards = hide_cards
+        self.hide_cards = False
         pass
 
     def get_player_hand_as_string(self):
         hand_as_string = [str(self.hand[0]), str(self.hand[1])]
         card_values = {'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
                '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2, 'AL': 1}
-        sorted_hand_as_string = sorted(hand_as_string, key=lambda x: (x[0], card_values[x[1]]))
+        sorted_hand = sorted(hand_as_string, key=lambda x: (x[0], card_values[x[1]]))
+        sorted_hand_as_string = sorted_hand[0] + sorted_hand[1]
         return sorted_hand_as_string
 
 

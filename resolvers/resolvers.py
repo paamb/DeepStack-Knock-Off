@@ -32,8 +32,8 @@ class PlayerNode(TreeNode):
     def initialize_strategy_matrix(self, legal_actions):
         number_of_legal_actions = len(legal_actions)
         number_of_possible_hands = 1326
-        # self.strategy_matrix = np.full((number_of_possible_hands, number_of_legal_actions), fill_value=1/number_of_legal_actions)
-        self.strategy_matrix = np.random.rand(number_of_possible_hands, number_of_legal_actions)
+        self.strategy_matrix = np.full((number_of_possible_hands, number_of_legal_actions), fill_value=1/number_of_legal_actions)
+        # self.strategy_matrix = np.random.rand(number_of_possible_hands, number_of_legal_actions)
 
     def update_ranges(self, player_ranges_for_action, action_index):
         player_ranges_for_action = dict(player_ranges_for_action)
@@ -42,6 +42,7 @@ class PlayerNode(TreeNode):
         return player_ranges_for_action
 
     def bayesian_range_update(self, range, action_index, strategy_matrix):
+        # print(action_index)
         action_column = strategy_matrix[:, action_index]
         sum_of_action_column = np.sum(action_column)
         sum_of_all_actions = np.sum(strategy_matrix)
@@ -162,8 +163,8 @@ class DeepStackResolver(Resolver):
     def __init__(self) -> None:
         from poker_oracle.utility_matrix import UtilityMatrixHandler
         super().__init__()
-        r_1 = self.generate_initial_range()
-        r_2 = self.generate_initial_range()
+        self.r_1 = self.generate_initial_range()
+        self.r_2 = self.generate_initial_range()
         self.state_manager = StateManager()
         self.simulation_deck = DeckManager()
         self.utility_matrix_handler = UtilityMatrixHandler()
@@ -289,9 +290,7 @@ class DeepStackResolver(Resolver):
     # Fold, All-in
     # Fold, Call, All-in
 
-    def choose_action(self, player, state): 
-        player_action, updated_r_1, r_2 = self.resolve(state, player, self.r_1, self.r_2, 1)
-        return player_action
+
 
     def handle_previous_node_was_chance_node(self, node, next_state, action):
         next_node = NeuralNetNode(node.current_player, next_state)
@@ -315,7 +314,9 @@ class DeepStackResolver(Resolver):
 
     def subtree_traversal_rollout(self, node, player_ranges):
         if isinstance(node, EndNode):
-            return node.get_value_vectors(node, player_ranges)
+            node_value_vectors = node.get_value_vectors(node, player_ranges)
+            node.node_value_vectors = node_value_vectors
+            return node_value_vectors
         
         # new_value_vectors stores all the values returned from each subnode/action. the value in the dictionary is a list of values returned from subnodes
         # this is used for calculating the weighted average when all the subnodes have returned their values.
@@ -349,11 +350,11 @@ class DeepStackResolver(Resolver):
         node_value_vectors = {}
         for player, subnode_values in all_subnodes_value_vectors.items():
             node_value_vectors[player] = node.calculate_weighted_average(np.array(subnode_values))
+            
+        # Set this to be used when calculating regret
+        node.node_value_vectors = dict(node_value_vectors)
 
         return node_value_vectors
-
-    def update_strategy(self, node):
-        pass
 
     def initial_player_range_update(self, player_ranges, already_dealt_cards):
         player_ranges = dict(player_ranges)
@@ -371,15 +372,66 @@ class DeepStackResolver(Resolver):
 
     def get_action_from_strategy(self, player, mean_strategy, state):
         player_hand_to_string = player.get_player_hand_as_string()
+        # print("Playerhand", player_hand_to_string)
         hole_pair_index = self.monte_carlo.get_hole_pair_index_in_all_possible_hole_pairs_list(player_hand_to_string)
+        # print("Hole pair index", hole_pair_index)
         strategy_given_hole_pair = mean_strategy[hole_pair_index]
-
-        index_of_best_action = np.argmax(strategy_given_hole_pair)[0]
-        best_action = state.legal_actions()[index_of_best_action]
+        print("Strategy_give_hole_pair", strategy_given_hole_pair)
+        input()
+        # print("Strategy given hole", strategy_given_hole_pair)
+        index_of_best_action = np.argmax(strategy_given_hole_pair)
+        # print("Index_of_action: ", index_of_best_action, state.legal_actions)
+        best_action = state.legal_actions[index_of_best_action]
         return best_action, index_of_best_action
 
 
-    def resolve(self, s, player, r_1, r_2, t): 
+    def update_strategy(self, node, root_node):
+        for action, child_node in node.child_nodes:
+            self.update_strategy(child_node, False)
+        
+        if isinstance(node, PlayerNode):
+            all_regrets = []
+            for action, child_node in node.child_nodes:
+                if root_node:
+                    print("Action: ", action, "Node value vector: ", child_node.node_value_vectors[node.current_player])
+                regret = child_node.node_value_vectors[node.current_player] - node.node_value_vectors[node.current_player]
+                # Sets every negative element to 0
+                positive_regret = np.maximum(regret, 0)
+                all_regrets.append(positive_regret)
+
+            all_regrets = np.array(all_regrets)
+
+            normalizer = np.sum(all_regrets, axis=0)
+            new_strategy = node.strategy_matrix
+            # print("Normalizer", normalizer)
+            # print("All regrets shape", all_regrets.shape)
+            # print("New strategy", new_strategy.shape)
+            # print("All regrets", all_regrets)
+            if root_node:
+                print("Normalizer", normalizer)
+                print("All regrets shape", all_regrets.shape)
+                print("New strategy", new_strategy.shape)
+                print("All regrets", all_regrets)
+            for i in range(len(node.state.legal_actions)):
+                for j in range(NUM_HOLE_PAIRS):
+                    if normalizer[j] == 0:
+                        continue
+                    new_strategy[j, i] = all_regrets[i][j] / normalizer[j]
+            
+            if root_node:
+                print("New Strategy", new_strategy)
+            node.strategy_matrix = new_strategy
+            
+            return node.strategy_matrix    
+
+
+                
+
+
+            
+
+
+    def resolve(self, s, player, r_1, r_2, num_rollouts): 
         # s = state, r_1 = range of player 1, r_2 = range of player 2, T = number of rollouts
         root = self.generate_initial_subtree(s, player, piv.number_of_allowed_bets_resolver)
         
@@ -390,19 +442,41 @@ class DeepStackResolver(Resolver):
         }
 
         all_strategies = []
-        for t in range(piv.number_of_rollouts):
+        for t in range(num_rollouts):
             player_ranges = self.initial_player_range_update(player_ranges, root.state.community_cards)
             v_1, v_2 = self.subtree_traversal_rollout(root, player_ranges)
-            strategy_t = self.update_strategy(root)
+            strategy_t = self.update_strategy(root, True)
             all_strategies.append(strategy_t)
+
         all_strategies = np.array(all_strategies)
-        mean_strategy = np.mean(all_strategies)
-        player_action, action_index = self.get_action_from_strategy(player, mean_strategy, root.state) 
-        r_1_given_action = root.bayesian_range_update(player_ranges[root.current_player], action_index, mean_strategy)
+        
+        last_strategy = all_strategies[-1]
+        print(last_strategy)
 
-        # self.r_1 = 
-        return player_action, r_1_given_action, r_2
+        for i in range(len(last_strategy)):
+            if last_strategy[i][-1] == 1:
+                print(last_strategy[i])
+                hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+                print(hole_pairs[i])
+        hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        print(hole_pairs)
+        # print(MonteCarlo().get_all_possible_hole_pairs())
+            # for j in range(len(last_stra
+            #tegy[0])):
+        # mean_strategy = np.mean(all_strategies, axis=0)
+        # mean_strategy = all_strategies[]
+        player_action, action_index = self.get_action_from_strategy(player, last_strategy, root.state) 
+        r_1_given_action = root.bayesian_range_update(player_ranges[root.current_player], action_index, last_strategy)
+        print("Chosen action: ", player_action)
+        print("R1", r_1_given_action)
+        input()
+        return 'C', r_1_given_action, r_2
 
+    def choose_action(self, player, state): 
+        player_action, updated_r_1, r_2 = self.resolve(state, player, self.r_1, self.r_2, 20)
+        # print(updated_r_1)
+        # input()
+        return player_action
 
 
 class PureRolloutResolver(Resolver):
