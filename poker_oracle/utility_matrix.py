@@ -39,6 +39,10 @@ class UtilityMatrixHandler:
                 
                 self.set_inverse_mirrored_utilities(player_1_card_index, player_2_card_index, utility)
 
+    def get_utility_matrix(self, public_cards):
+        self.generate_utility_matrix(public_cards)
+        return np.array(self.utility_matrix)
+
     def set_inverse_mirrored_utilities(self, player_1_card_index, player_2_card_index, value):
         self.utility_matrix[player_1_card_index][player_2_card_index] = value
         self.utility_matrix[player_2_card_index][player_1_card_index] = -value
@@ -74,6 +78,12 @@ class UtilityMatrixHandler:
 if __name__ == "__main__":
     utility_matrix_handler = UtilityMatrixHandler()
 
-    public_cards = [Card('S', '6'), Card('S', '5'), Card('C', 'A'), Card('C', '2'), Card('C', '7')]
-    utility_matrix_handler.generate_utility_matrix(public_cards)
+    public_cards = [Card('S', '6'), Card('S', '5'), Card('C', 'J'), Card('D', 'A'), Card('C', 'A')]
+    utility_matrix_handler.get_utility_matrix(public_cards)
+    all_hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+    print(all_hole_pairs[0])
+    print(all_hole_pairs[1325])
+    print(utility_matrix_handler.utility_matrix[0][1325])
+    print(utility_matrix_handler.utility_matrix[1325][0])
+
     

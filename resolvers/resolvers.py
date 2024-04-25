@@ -1,9 +1,12 @@
 import numpy as np
 from poker_oracle.monte_carlo import MonteCarlo
+
 from game_manager.pivotal_parameters import pivotal_parameters as piv
 from state_manager.state_manager import StateManager
 from game_manager.deck_manager import DeckManager
 
+
+NUM_HOLE_PAIRS = 1326
 
 class TreeNode():
     def __init__(self, state) -> None:
@@ -55,20 +58,60 @@ class PlayerNode(TreeNode):
     pass
 
 class EndNode(TreeNode):
-    def get_value_vectors(self): 
-        return np.random.rand(1326), np.random.rand(1326)
+    def get_value_vectors(self, node, player_ranges): 
+        opponent = node.get_opponent()
+
+        value_vectors = {
+            node.current_player: np.random.rand(1326),
+            opponent: np.random.rand(1326)
+        }
+        return value_vectors
     # Showdown?
     # Fold or showdown parameter
 
 class FoldNode(EndNode):
+    def get_value_vectors(self, node, player_ranges):
+        """
+        Initialize value vectors to contain negative value for the 
+        "current_player" which is the active player in the state.
+        """
+        fold_value = node.state.pot / piv.average_pot_size
 
-    pass
+        opponent = node.get_opponent()
+
+        value_vectors = {
+            node.current_player: np.full(NUM_HOLE_PAIRS, -fold_value),
+            opponent: np.full(NUM_HOLE_PAIRS, fold_value)
+        }
+
+        for player in player_ranges.keys():
+            player_mask = np.ceil(player_ranges[player]).astype(int)
+            value_vector = value_vectors[player]
+            value_vector = value_vector * player_mask
+            value_vectors[player] = value_vector
+        
+        return value_vectors
 
 class NeuralNetNode(EndNode):
     pass
 
 class ShowDownNode(EndNode):
-    pass
+    def __init__(self, state, utility_matrix_handler) -> None:
+        super().__init__(state)
+        self.utility_matrix = utility_matrix_handler.get_utility_matrix(state.community_cards)
+
+
+    def get_value_vectors(self, node, player_ranges):
+        scale_value = node.state.pot / piv.average_pot_size
+        opponent = node.get_opponent()
+        v_p = scale_value * np.dot(self.utility_matrix, player_ranges[opponent])
+        v_o = scale_value * (-1) * np.dot(player_ranges[node.current_player], self.utility_matrix)
+
+        value_vector = {
+            self.current_player: v_p,
+            opponent: v_o
+        }
+        return value_vector
 
 class ChanceNode(TreeNode):
 
@@ -77,6 +120,9 @@ class ChanceNode(TreeNode):
     pass    
 
     def update_ranges(self, player_ranges_for_action, action_index, card_to_range_indexes_to_zero):
+        """
+        Zero's elements in the range where card is dealt.
+        """
         player_ranges_for_action = dict(player_ranges_for_action)
         cards, _ = self.child_nodes[action_index]
         for card in cards:
@@ -87,7 +133,7 @@ class ChanceNode(TreeNode):
         for player, range in player_ranges_for_action.items():
             player_ranges_for_action[player] = range / np.sum(range)
 
-        return dict(player_ranges_for_action)
+        return player_ranges_for_action
 
 
 class Resolver():
@@ -99,7 +145,6 @@ class Resolver():
 
 
 class DeepStackResolver(Resolver):
-
     def generate_initial_range(self):
         n = 1326
         r = np.ones(n)
@@ -107,11 +152,13 @@ class DeepStackResolver(Resolver):
         return r
 
     def __init__(self) -> None:
+        from poker_oracle.utility_matrix import UtilityMatrixHandler
         super().__init__()
         self.r_1 = self.generate_initial_range()
         self.r_2 = self.generate_initial_range()
         self.state_manager = StateManager()
         self.simulation_deck = DeckManager()
+        self.utility_matrix_handler = UtilityMatrixHandler()
         self.card_to_range_indexes_to_zero = self.generate_card_to_range_indexes_to_zero_dict()
 
     def generate_card_to_range_indexes_to_zero_dict(self):
@@ -205,23 +252,16 @@ class DeepStackResolver(Resolver):
         
         elif action == 'C':
             # TODO: Change to fit neural network later
-            next_node = self.end_or_chance_node(next_state, node)
+            next_node = self.end_or_chance_node(next_state, node, self.utility_matrix_handler)
 
         elif action == 'A':
             if self.other_player_should_make_move_after_all_in(next_state, node):
                 next_node = self.create_player_node_with_swapped_current_player(node, next_state)
             else:
-                next_node = self.end_or_chance_node(next_state, node)
+                next_node = self.end_or_chance_node(next_state, node, self.utility_matrix_handler)
 
         else:
-            # current_bet = next_state.current_bet
-            # player_chips, player_betted_chips = next_state.chips_per_player[node.current_player]
-
-            # # Player has gone all-in. This is not a call-all-in
-            # if player_betted_chips == current_bet:
-            #     next_node = self.create_player_node_with_swapped_current_player(node, next_state)
-            # else:
-            next_node = ChanceNode(next_state)
+            raise ValueError("Illegal action")
         return next_node
     
     def other_player_should_make_move_after_all_in(self, next_state, node):
@@ -231,9 +271,9 @@ class DeepStackResolver(Resolver):
 
         return all_in_amount > opponent_betted_chips and not opponent_chips == 0
 
-    def end_or_chance_node(self, next_state, node):
+    def end_or_chance_node(self, next_state, node, utility_matrix_handler):
         if self.is_river_stage(node):
-            return ShowDownNode(next_state)
+            return ShowDownNode(next_state, utility_matrix_handler)
         else:
             return ChanceNode(next_state)
     
@@ -267,7 +307,7 @@ class DeepStackResolver(Resolver):
 
     def subtree_traversal_rollout(self, node, player_ranges):
         if isinstance(node, EndNode):
-            return node.get_value_vectors()
+            return node.get_value_vectors(node, player_ranges)
         
         player_1_value_vectors = []
         player_2_value_vectors = []
@@ -285,6 +325,7 @@ class DeepStackResolver(Resolver):
         player_1_value_vectors = np.array(player_1_value_vectors)
         player_2_value_vectors = np.array(player_2_value_vectors)
         
+        # Same function for chance node or player node. Depends on the node object
         player_1_values = node.calculate_weighted_average(player_1_value_vectors)
         player_2_values = node.calculate_weighted_average(player_2_value_vectors)
 
@@ -292,6 +333,19 @@ class DeepStackResolver(Resolver):
 
     def update_strategy(self, node):
         pass
+
+    def initial_player_range_update(self, player_ranges, already_dealt_cards):
+        player_ranges = dict(player_ranges)
+        cards_string = [str(card) for card in already_dealt_cards]
+        for card in cards_string:
+            indexes_to_zero = self.card_to_range_indexes_to_zero[str(card)]
+            for player in player_ranges.keys():
+                player_ranges[player][indexes_to_zero] = 0
+            
+        for player, range in player_ranges.items():
+            player_ranges[player] = range / np.sum(range)
+
+        return player_ranges
 
     def resolve(self, s, player, r_1, r_2, t): 
         # s = state, r_1 = range of player 1, r_2 = range of player 2, T = number of rollouts
@@ -303,6 +357,7 @@ class DeepStackResolver(Resolver):
             opponent: r_2,
         }
         for t in range(piv.number_of_rollouts):
+            player_ranges = self.initial_player_range_update(player_ranges, root.state.community_cards)
             v_1, v_2 = self.subtree_traversal_rollout(root, player_ranges)
             self.update_strategy(root)
 
