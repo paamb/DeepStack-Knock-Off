@@ -110,10 +110,9 @@ class State:
         self.pot += money_to_add
 
     def get_amount_to_call(self, player):
-        return self.round_manager.get_amount_to_call(player)
-
+        return self.current_bet - self.chips_per_player[player][1]
     def get_amount_to_bet(self, player):
-        return self.round_manager.get_amount_to_bet(player)
+        return self.get_amount_to_call(player) + 2 * piv.small_blind
 
 
 class StateManager:

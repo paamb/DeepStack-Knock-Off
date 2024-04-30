@@ -590,7 +590,7 @@ class DeepStackResolver(Resolver):
         print("Chosen action: ", player_action)
         print("R1", r_1_given_action)
         input()
-        return 'C', r_1_given_action, r_2
+        return player_action, r_1_given_action, r_2
 
     def choose_action(self, player, state): 
         player_action, updated_r_1, r_2 = self.resolve(state, player, self.r_1, self.r_2, 20)
@@ -612,7 +612,7 @@ class PureRolloutResolver(Resolver):
 
         # Want to add potsize later
         expected_utility = []
-        for action in state.possible_actions:
+        for action in state.legal_actions:
             utility = self.expected_utility(
                 player, action, state, win_probability)
             expected_utility.append((action, utility))

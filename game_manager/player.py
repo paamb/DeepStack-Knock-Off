@@ -17,7 +17,7 @@ class Player():
         self.chips = chips
         self.betted_chips = 0
         self.is_folded = False
-        self.hide_cards = False
+        self.hide_cards = hide_cards
         pass
 
     def get_player_hand_as_string(self):
@@ -115,8 +115,13 @@ class AIPlayer(Player):
         self.risk_averseness = risk_averseness
 
     def action(self, state):
-        resolver = self.pure_rollout_resolver if random.random(
-        ) < self.probability_of_pure_rollout else self.deepstack_resolver
+        if len(state.community_cards) == 5:
+            resolver = self.deepstack_resolver
+        else:
+            resolver = self.pure_rollout_resolver
+
+        # resolver = self.pure_rollout_resolver if random.random(
+        # ) < self.probability_of_pure_rollout else self.deepstack_resolver
         action = resolver.choose_action(self, state)
         return action
 
