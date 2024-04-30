@@ -36,24 +36,25 @@ class PlayerNode(TreeNode):
         # self.strategy_matrix = np.random.rand(number_of_possible_hands, number_of_legal_actions)
 
     def update_ranges(self, player_ranges_for_action, action_index):
-        player_ranges_for_action = dict(player_ranges_for_action)
-        r_p = player_ranges_for_action[self.current_player]
-        player_ranges_for_action[self.current_player] = self.bayesian_range_update(r_p, action_index, self.strategy_matrix)
-        return player_ranges_for_action
+        # player_ranges_for_action = dict(player_ranges_for_action)
+        new_player_ranges_for_action = {key: value.copy() for key, value in player_ranges_for_action.items()}
+        r_p = new_player_ranges_for_action[self.current_player]
+        new_player_ranges_for_action[self.current_player] = self.bayesian_range_update(r_p, action_index, self.strategy_matrix)
+        return new_player_ranges_for_action
 
-    def print_player_ranges(self, player_ranges, node):
+    def print_player_ranges(self, range_1):
         hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
-        community_cards = node.state.community_cards
-        r_1 = player_ranges[node.current_player]
-        opponent = node.get_opponent()
-        r_2 = player_ranges[opponent]
-        with open('ranges_output.txt', 'w') as file:
+        # community_cards = node.state.community_cards
+        # r_1 = player_ranges[node.current_player]
+        # opponent = node.get_opponent()
+        # r_2 = player_ranges[opponent]
+        with open('ranges_in_bayesian_update_output.txt', 'w') as file:
             # file.write(community_cards)
-            for card in community_cards:
-                file.write(str(card))
+            # for card in community_cards:
+            #     file.write(str(card))
             file.write("Hole pair | r_1 | r_2 \n")
             for i in range(len(hole_pairs)):
-                file.write(f"{hole_pairs[i]} | {r_1[i]} | {r_2[i]} \n")
+                file.write(f"{hole_pairs[i]} | {range_1[i]} \n")
 
     def bayesian_range_update(self, range, action_index, strategy_matrix):
         # print(action_index)
@@ -64,7 +65,7 @@ class PlayerNode(TreeNode):
         p_of_action = sum_of_action_column / sum_of_all_actions
 
         range = action_column * range / p_of_action 
-
+        self.print_player_ranges(range)
         return range
 
     
@@ -139,17 +140,27 @@ class ChanceNode(TreeNode):
         """
         Zero's elements in the range where card is dealt.
         """
-        player_ranges_for_action = dict(player_ranges_for_action)
+        # players = list(player_ranges_for_action.keys())
+
+        new_player_ranges_for_action = {key: value.copy() for key, value in player_ranges_for_action.items()}
+        # new_player_ranges_for_action = {
+        #     player[0] = player_ranges_for_action[players[0]].copy(),
+        # }
+        # print(players[0])
+
+        # new_r_1 = player_ranges_for_action[players[0]].copy()
+        # print(type(new_player_ranges_for_action[player_ranges_for_action.keys()[0]]))
+        # new_r_1 = list([])
         cards, _ = self.child_nodes[action_index]
         for card in cards:
             indexes_to_zero = card_to_range_indexes_to_zero[str(card)]
-            for player in player_ranges_for_action.keys():
-                player_ranges_for_action[player][indexes_to_zero] = 0
+            for player in new_player_ranges_for_action.keys():
+                new_player_ranges_for_action[player][indexes_to_zero] = 0
             
-        for player, range in player_ranges_for_action.items():
-            player_ranges_for_action[player] = range / np.sum(range)
+        for player, range in new_player_ranges_for_action.items():
+            new_player_ranges_for_action[player] = range / np.sum(range)
 
-        return player_ranges_for_action
+        return new_player_ranges_for_action
 
 
 class Resolver():
@@ -343,10 +354,16 @@ class DeepStackResolver(Resolver):
 
     def subtree_traversal_rollout(self, node, player_ranges):
         if isinstance(node, EndNode):
-            self.print_player_ranges(player_ranges, node)
-            input()
+            # self.print_player_ranges(player_ranges, node)
+            # input()
             node_value_vectors = node.get_value_vectors(node, player_ranges)
-            node.node_value_vectors = node_value_vectors
+            # node.node_value_vectors = node_value_vectors
+            new_node_value_vectors = {key: value.copy() for key, value in node_value_vectors.items()}
+            node.node_value_vectors = new_node_value_vectors
+
+            opponent = node.get_opponent()
+            self.print_value_vectors(new_node_value_vectors[node.current_player], new_node_value_vectors[opponent], node.state.community_cards)
+            input("New node value vector")
             return node_value_vectors
         
         # new_value_vectors stores all the values returned from each subnode/action. the value in the dictionary is a list of values returned from subnodes
@@ -383,22 +400,25 @@ class DeepStackResolver(Resolver):
             node_value_vectors[player] = node.calculate_weighted_average(np.array(subnode_values))
             
         # Set this to be used when calculating regret
-        node.node_value_vectors = dict(node_value_vectors)
+        node.node_value_vectors = {key: value.copy() for key, value in node_value_vectors.items()}
 
+        # new_node_value_vectors = {key: value.copy() for key, value in player_ranges_for_action.items()}
+        # node.node_value_vectors = new_node_value_vectors
         return node_value_vectors
 
     def initial_player_range_update(self, player_ranges, already_dealt_cards):
-        player_ranges = dict(player_ranges)
+        # player_ranges = dict(player_ranges)
+        new_player_ranges = {key: value.copy() for key, value in player_ranges.items()}
         cards_string = [str(card) for card in already_dealt_cards]
         for card in cards_string:
             indexes_to_zero = self.card_to_range_indexes_to_zero[str(card)]
-            for player in player_ranges.keys():
-                player_ranges[player][indexes_to_zero] = 0
+            for player in new_player_ranges.keys():
+                new_player_ranges[player][indexes_to_zero] = 0
             
-        for player, range in player_ranges.items():
-            player_ranges[player] = range / np.sum(range)
+        for player, range in new_player_ranges.items():
+            new_player_ranges[player] /= np.sum(range)
 
-        return player_ranges
+        return new_player_ranges
 
 
     def get_action_from_strategy(self, player, mean_strategy, state):
@@ -512,6 +532,7 @@ class DeepStackResolver(Resolver):
         all_strategies = np.array(all_strategies)
         
         last_strategy = all_strategies[-1]
+        print("Lenght: ", len(all_strategies))
         if len(root.state.community_cards) == 5:
             self.print_strategy_matrix(root.state.community_cards, last_strategy)
             self.print_value_vectors(node_value_vectors[root.current_player], node_value_vectors[opponent], root.state.community_cards)
