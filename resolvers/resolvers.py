@@ -41,11 +41,26 @@ class PlayerNode(TreeNode):
         player_ranges_for_action[self.current_player] = self.bayesian_range_update(r_p, action_index, self.strategy_matrix)
         return player_ranges_for_action
 
+    def print_player_ranges(self, player_ranges, node):
+        hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        community_cards = node.state.community_cards
+        r_1 = player_ranges[node.current_player]
+        opponent = node.get_opponent()
+        r_2 = player_ranges[opponent]
+        with open('ranges_output.txt', 'w') as file:
+            # file.write(community_cards)
+            for card in community_cards:
+                file.write(str(card))
+            file.write("Hole pair | r_1 | r_2 \n")
+            for i in range(len(hole_pairs)):
+                file.write(f"{hole_pairs[i]} | {r_1[i]} | {r_2[i]} \n")
+
     def bayesian_range_update(self, range, action_index, strategy_matrix):
         # print(action_index)
         action_column = strategy_matrix[:, action_index]
         sum_of_action_column = np.sum(action_column)
         sum_of_all_actions = np.sum(strategy_matrix)
+        print("Bayesian update: ", sum_of_action_column, sum_of_all_actions, sum_of_action_column/sum_of_all_actions)
         p_of_action = sum_of_action_column / sum_of_all_actions
 
         range = action_column * range / p_of_action 
@@ -312,8 +327,24 @@ class DeepStackResolver(Resolver):
         next_node.state = next_state
         return next_node
 
+    def print_player_ranges(self, player_ranges, node):
+        hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        community_cards = node.state.community_cards
+        r_1 = player_ranges[node.current_player]
+        opponent = node.get_opponent()
+        r_2 = player_ranges[opponent]
+        with open('ranges_output.txt', 'w') as file:
+            # file.write(community_cards)
+            for card in community_cards:
+                file.write(str(card))
+            file.write("Hole pair | r_1 | r_2 \n")
+            for i in range(len(hole_pairs)):
+                file.write(f"{hole_pairs[i]} | {r_1[i]} | {r_2[i]} \n")
+
     def subtree_traversal_rollout(self, node, player_ranges):
         if isinstance(node, EndNode):
+            self.print_player_ranges(player_ranges, node)
+            input()
             node_value_vectors = node.get_value_vectors(node, player_ranges)
             node.node_value_vectors = node_value_vectors
             return node_value_vectors
@@ -384,6 +415,21 @@ class DeepStackResolver(Resolver):
         best_action = state.legal_actions[index_of_best_action]
         return best_action, index_of_best_action
 
+    def print_strategy_matrix(self, community_cards, strategy_matrix):
+        # hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        
+        with open('strategy_output.txt', 'w') as file:
+            # file.write(community_cards)
+            for card in community_cards:
+                file.write(str(card))
+            file.write("Hole pair | Strategy\n")
+            for i in range(len(hole_pairs)):
+                file.write(f"{hole_pairs[i]} | {strategy_matrix[i]}\n")
+        # print("Hole pair | Stategy")
+        # for i in range(len(hole_pairs)):
+        #     print(hole_pairs[i], strategy_matrix[i])
+
 
     def update_strategy(self, node, root_node):
         for action, child_node in node.child_nodes:
@@ -402,7 +448,7 @@ class DeepStackResolver(Resolver):
             all_regrets = np.array(all_regrets)
 
             normalizer = np.sum(all_regrets, axis=0)
-            new_strategy = node.strategy_matrix
+            new_strategy = node.strategy_matrix.copy()
             # print("Normalizer", normalizer)
             # print("All regrets shape", all_regrets.shape)
             # print("New strategy", new_strategy.shape)
@@ -417,6 +463,7 @@ class DeepStackResolver(Resolver):
                     if normalizer[j] == 0:
                         continue
                     new_strategy[j, i] = all_regrets[i][j] / normalizer[j]
+                    # new_strategy[j, i] /= normalizer[j]
             
             if root_node:
                 print("New Strategy", new_strategy)
@@ -428,7 +475,19 @@ class DeepStackResolver(Resolver):
                 
 
 
-            
+    def print_value_vectors(self, v_1, v_2, community_cards):
+        hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        
+        with open('value_vector_output.txt', 'w') as file:
+            # file.write(community_cards)
+            sum_v1 = np.sum(v_1)
+            sum_v2 = np.sum(v_2)
+            file.write(f"Sums: {sum_v1}, {sum_v2} \n", )
+            for card in community_cards:
+                file.write(str(card))
+            file.write("Hole pair | V_1 | V_2\n")
+            for i in range(len(hole_pairs)):
+                file.write(f"{hole_pairs[i]} | {v_1[i]} | {v_2[i]} \n")
 
 
     def resolve(self, s, player, r_1, r_2, num_rollouts): 
@@ -442,24 +501,38 @@ class DeepStackResolver(Resolver):
         }
 
         all_strategies = []
-        for t in range(num_rollouts):
+        for t in range(1):
             player_ranges = self.initial_player_range_update(player_ranges, root.state.community_cards)
-            v_1, v_2 = self.subtree_traversal_rollout(root, player_ranges)
+            node_value_vectors = self.subtree_traversal_rollout(root, player_ranges)
             strategy_t = self.update_strategy(root, True)
             all_strategies.append(strategy_t)
+        
+
 
         all_strategies = np.array(all_strategies)
         
         last_strategy = all_strategies[-1]
-        print(last_strategy)
+        if len(root.state.community_cards) == 5:
+            self.print_strategy_matrix(root.state.community_cards, last_strategy)
+            self.print_value_vectors(node_value_vectors[root.current_player], node_value_vectors[opponent], root.state.community_cards)
+        # print(last_strategy)
 
-        for i in range(len(last_strategy)):
-            if last_strategy[i][-1] == 1:
-                print(last_strategy[i])
-                hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
-                print(hole_pairs[i])
-        hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
-        print(hole_pairs)
+        # ones = 0
+        # zeros = 0
+        # point = 0
+        # for i in range(len(last_strategy)):
+        #     if last_strategy[i][-1] == 1:
+        #         print(last_strategy[i])
+        #         hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        #         print(hole_pairs[i])
+        #         ones += 1
+        #     elif last_strategy[i][-1] == 0: 
+        #         zeros += 1 
+        #     elif last_strategy[i][-1] == 0.25:
+        #         point += 1 
+        # print("Counters", ones, zeros, point, ones+zeros+point)
+        # hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        # print(hole_pairs)
         # print(MonteCarlo().get_all_possible_hole_pairs())
             # for j in range(len(last_stra
             #tegy[0])):
