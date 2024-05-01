@@ -23,16 +23,22 @@ class PlayerNode(TreeNode):
         super().__init__(current_player, state) 
         self.current_player = current_player
 
+
     def calculate_weighted_average(self, value_vectors_from_children):
         a = self.strategy_matrix
         b = value_vectors_from_children.T
+        print(a.shape)
+        print(b.shape)
+        # input()
         value_vector = np.einsum('ij,ij->i', a, b)
         return value_vector
     
-    def initialize_strategy_matrix(self, legal_actions):
+    def initialize_strategy_matrix_and_regret(self, legal_actions):
         number_of_legal_actions = len(legal_actions)
-        number_of_possible_hands = 1326
-        self.strategy_matrix = np.full((number_of_possible_hands, number_of_legal_actions), fill_value=1/number_of_legal_actions)
+        # number_of_possible_hands = 1326
+        self.strategy_matrix = np.full((NUM_HOLE_PAIRS, number_of_legal_actions), fill_value=1/number_of_legal_actions)
+        # print(self.strategy_matrix)
+        self.regret = np.full((NUM_HOLE_PAIRS, number_of_legal_actions), fill_value=0)
         # self.strategy_matrix = np.random.rand(number_of_possible_hands, number_of_legal_actions)
 
     def update_ranges(self, player_ranges_for_action, action_index):
@@ -60,12 +66,17 @@ class PlayerNode(TreeNode):
         # print(action_index)
         new_range = range.copy()
         action_column = strategy_matrix[:, action_index]
+        # print(action_column)
         sum_of_action_column = np.sum(action_column)
         sum_of_all_actions = np.sum(strategy_matrix)
-        print("Bayesian update: ", sum_of_action_column, sum_of_all_actions, sum_of_action_column/sum_of_all_actions)
+        # print("Bayesian update: ", sum_of_action_column, sum_of_all_actions, sum_of_action_column/sum_of_all_actions)
         p_of_action = sum_of_action_column / sum_of_all_actions
-
-        new_range = action_column * range / p_of_action 
+        # if (p_of_action == 0):
+        #     print(action_index, "probabiliy of action is zero")
+        if (p_of_action == 0):
+            new_range = range*0
+        else:
+            new_range = action_column * range / p_of_action 
         # self.print_player_ranges(range)
         return new_range
 
@@ -80,8 +91,8 @@ class EndNode(TreeNode):
         opponent = node.get_opponent()
 
         value_vectors = {
-            node.current_player: np.random.randn(1326),
-            opponent: -np.random.randn(1326)
+            node.current_player: np.ones(1326),
+            opponent: -np.ones(1326)
         }
         return value_vectors
     # Showdown?
@@ -107,7 +118,12 @@ class FoldNode(EndNode):
             value_vector = value_vectors[player]
             value_vector = value_vector * player_mask
             value_vectors[player] = value_vector
-        
+
+        for player in player_ranges.keys():
+            zeros = 0
+            for i in range(NUM_HOLE_PAIRS):
+                if value_vectors[player][i] == 0:
+                    zeros += 1
         return value_vectors
 
 class NeuralNetNode(EndNode):
@@ -158,7 +174,10 @@ class ChanceNode(TreeNode):
                 new_player_ranges_for_action[player][indexes_to_zero] = 0
             
         for player, range in new_player_ranges_for_action.items():
+            # if np.sum(range) != 0:
             new_player_ranges_for_action[player] = range / np.sum(range)
+            # else:
+            #     new_player_ranges_for_action[player] = range * 0
 
         return new_player_ranges_for_action
 
@@ -219,7 +238,7 @@ class DeepStackResolver(Resolver):
             node.state.legal_actions = node.state.legal_actions[:2]
 
         if isinstance(node, PlayerNode):
-            node.initialize_strategy_matrix(node.state.legal_actions)
+            node.initialize_strategy_matrix_and_regret(node.state.legal_actions)
         for action in node.state.legal_actions:
             # print(action, node)
             child_node = self.create_child_node(node, action, is_first_layer)
@@ -334,8 +353,12 @@ class DeepStackResolver(Resolver):
         elif isinstance(next_node, ChanceNode):
             num_cards_to_deal = self.get_num_cards_to_deal_in_stage(next_node)
             next_state.set_legal_actions_from_chance_node(next_node, self.simulation_deck, num_cards_to_deal)
-        
+
         next_node.state = next_state
+        if not isinstance(next_node, FoldNode): 
+                print(f"Player: {node.current_player} | {node} + {action} -> {next_node} ")
+        else:
+            print(f"Player: {node.current_player} | {node} + {action} -> {next_node} | Next nodes possible actions: None")
         return next_node
 
     def print_player_ranges(self, player_ranges, node):
@@ -354,6 +377,8 @@ class DeepStackResolver(Resolver):
 
     def subtree_traversal_rollout(self, node, player_ranges):
         if isinstance(node, EndNode):
+            self.print_player_ranges(player_ranges, node)
+            # input("Player ranges updated")
             # self.print_player_ranges(player_ranges, node)
             # input()
             node_value_vectors = node.get_value_vectors(node, player_ranges)
@@ -362,7 +387,7 @@ class DeepStackResolver(Resolver):
             node.node_value_vectors = new_node_value_vectors
 
             opponent = node.get_opponent()
-            self.print_value_vectors(new_node_value_vectors[node.current_player], new_node_value_vectors[opponent], node.state.community_cards)
+            # self.print_value_vectors(new_node_value_vectors[node.current_player], new_node_value_vectors[opponent], node.state.community_cards)
             # input("New node value vector")l
             return node_value_vectors
         
@@ -381,6 +406,7 @@ class DeepStackResolver(Resolver):
             # chance node has its own way of updating range, player node updates with Bayesian Update
             if isinstance(node, PlayerNode):
                 player_ranges_for_action = node.update_ranges(player_ranges, action_index)
+                
             elif isinstance(node, ChanceNode):
                 player_ranges_for_action = node.update_ranges(player_ranges, action_index, self.card_to_range_indexes_to_zero)
             else:
@@ -391,6 +417,7 @@ class DeepStackResolver(Resolver):
             # recursive call
             # collects values in a dictionary all_subnodes_value_vectors
             subnode_value_vectors = self.subtree_traversal_rollout(child_node, player_ranges_for_action)
+            print(child_node, subnode_value_vectors)
             for player in subnode_value_vectors.keys():
                 all_subnodes_value_vectors[player].append(subnode_value_vectors[player])
         
@@ -399,7 +426,11 @@ class DeepStackResolver(Resolver):
         # for a chance-node, the weights are completely even, meaning it is a normal average.
         node_value_vectors = {}
         for player, subnode_values in all_subnodes_value_vectors.items():
+            print(player, subnode_values)
+            # input()
+            # print(player)
             node_value_vectors[player] = node.calculate_weighted_average(np.array(subnode_values))
+        # input("Finished")
             
         # Set this to be used when calculating regret
         node.node_value_vectors = {key: value.copy() for key, value in node_value_vectors.items()}
@@ -429,7 +460,7 @@ class DeepStackResolver(Resolver):
         # print("Hole pair index", hole_pair_index)
         strategy_given_hole_pair = mean_strategy[hole_pair_index]
         print("Strategy_give_hole_pair", strategy_given_hole_pair)
-        input()
+        # input()
         # print("Strategy given hole", strategy_given_hole_pair)
         index_of_best_action = np.argmax(strategy_given_hole_pair)
         # print("Index_of_action: ", index_of_best_action, state.legal_actions)
@@ -458,48 +489,63 @@ class DeepStackResolver(Resolver):
         
         if isinstance(node, PlayerNode):
             all_regrets = []
-            for action, child_node in node.child_nodes:
-                if root_node:
-                    print("Action: ", action, "Node value vector: ", child_node.node_value_vectors[node.current_player])
-                regret = child_node.node_value_vectors[node.current_player] - node.node_value_vectors[node.current_player]
+            for action_index, (action, child_node )in enumerate(node.child_nodes):
+                # if root_node:
+                    # print("Action: ", action, "Node value vector: ", child_node.node_value_vectors[node.current_player])
+                delta_regret = child_node.node_value_vectors[node.current_player] - node.node_value_vectors[node.current_player]
+                node.regret[:, action_index] = node.regret[:, action_index] + delta_regret
                 # Sets every negative element to 0
-                positive_regret = np.maximum(regret, 0).copy()
-                all_regrets.append(positive_regret)
+                # positive_regret = np.maximum(regret, 0).copy()
+                # all_regrets.append(positive_regret)
+            
 
-            all_regrets = np.array(all_regrets).T
+            def softmax(x):
+                e_x = np.exp(x - np.max(x, axis=1, keepdims=True))  # subtract max for numerical stability
+                return e_x / np.sum(e_x, axis=1, keepdims=True)
 
-            print("All regrets shape: ", all_regrets.shape)
+            # positive_regret = np.maximum(node.regret, 1e-9)
+            min_values = np.min(node.regret, axis=1, keepdims=True)
+            shift = np.maximum(-min_values, 0)
+            # shift = -np.min(node.regret, axis=1) if np.min(node.regret, axis=1) < 0 else 0
+            shifted_matrix = node.regret + shift
 
-            normalizer = np.sum(all_regrets, axis=1)
-            print("Normalizer shape: ", normalizer.shape)
+            softmax_probs = softmax(shifted_matrix)
+            new_strategy_matrix = softmax_probs.copy()
+            # all_regrets = np.array(all_regrets).T
+
+            # print("All regrets shape: ", all_regrets.shape)
+
+            # normalizer = np.sum(positive_regret, axis=1)
+            # print("Normalizer shape: ", normalizer.shape)
             # print(len(normalizer))
             # print("All regrets:", all_regrets[0], len(all_regrets))
             # input()
-            new_strategy = node.strategy_matrix.copy()
+            # new_strategy = node.strategy_matrix.copy()
             # print("Normalizer", normalizer)
             # print("All regrets shape", all_regrets.shape)
             # print("New strategy", new_strategy.shape)
             # print("All regrets", all_regrets)
-            if root_node:
-                print("Normalizer", normalizer)
-                print("All regrets shape", all_regrets.shape)
-                print("New strategy", new_strategy.shape)
-                print("All regrets", all_regrets)
-            for i in range(NUM_HOLE_PAIRS):
-                for j in range(len(node.state.legal_actions)):
-                    if normalizer[i] == 0:
-                        continue
-                    # print(normalizer[j])
-                    # new_strategy[j, i] = all_regrets[i][j] / normalizer[j]
-                    new_strategy[i][j] = all_regrets[i][j] / normalizer[i]
+            # if root_node:
+                # print("Normalizer", normalizer)
+                # print("All regrets shape", positive_regret.shape)
+                # print("New strategy", new_strategy.shape)
+                # print("All regrets", positive_regret)
+            
+            # for i in range(NUM_HOLE_PAIRS):
+            #     for j in range(len(node.state.legal_actions)):
+            #         if normalizer[i] == 0:
+            #             continue
+            #         # print(normalizer[j])
+            #         # new_strategy[j, i] = all_regrets[i][j] / normalizer[j]
+            #         new_strategy[i][j] = positive_regret[i][j] / normalizer[i]
                     # new_strategy[i][j] = all_regrets[i][j]
                     # new_strategy[j, i] /= normalizer[j]
             
-            if root_node:
-                print("New Strategy", new_strategy)
-            node.strategy_matrix = new_strategy
+            # if root_node:
+                # print("New Strategy", new_strategy)
+            node.strategy_matrix = new_strategy_matrix
             
-            return node.strategy_matrix    
+            return new_strategy_matrix   
 
 
                 
@@ -521,6 +567,23 @@ class DeepStackResolver(Resolver):
                 file.write(f"{value_vectors_with_holepairs[i][0]} | {value_vectors_with_holepairs[i][1]} | {value_vectors_with_holepairs[i][2]} \n")
 
 
+    def print_strategy_matrix_and_value_vectors(self, v_1, v_2, community_cards, strategy):
+        hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        # strategy_matrix_with_holepairs = [(hole_pairs[i]) for i in range(len(hole_pairs))]
+        value_vectors_with_holepairs = [(hole_pairs[i], v_1[i], v_2[i], strategy[i]) for i in range(len(hole_pairs))]
+        value_vectors_with_holepairs.sort(key=lambda x: (x[1]), reverse=True)
+        with open('value_vector_output_strategy.txt', 'w') as file:
+            # file.write(community_cards)
+            sum_v1 = np.sum(v_1)
+            sum_v2 = np.sum(v_2)
+            file.write(f"Sums: {sum_v1}, {sum_v2} \n", )
+            for card in community_cards:
+                file.write(str(card))
+            file.write("Hole pair | V_1 | V_2\n")
+            for i in range(len(value_vectors_with_holepairs)):
+                file.write(f"{value_vectors_with_holepairs[i][0]} | {value_vectors_with_holepairs[i][1]} | {value_vectors_with_holepairs[i][2]} | {value_vectors_with_holepairs[i][3]}\n")
+        
+
     def resolve(self, s, player, r_1, r_2, num_rollouts): 
         # s = state, r_1 = range of player 1, r_2 = range of player 2, T = number of rollouts
         root = self.generate_initial_subtree(s, player, piv.number_of_allowed_bets_resolver)
@@ -531,19 +594,25 @@ class DeepStackResolver(Resolver):
             opponent: r_2,
         }
 
+        print(root.current_player, root.get_opponent())
+
         all_strategies = []
         player_ranges = self.initial_player_range_update(player_ranges, root.state.community_cards)
         for t in range(10):
             self.print_player_ranges(player_ranges, root)
+            # input()
             # input("Initial player ranges")
             node_value_vectors = self.subtree_traversal_rollout(root, player_ranges)
-            dot_1 = np.dot(player_ranges[root.current_player], node_value_vectors[root.current_player])
-            dot_2 = np.dot(player_ranges[opponent], node_value_vectors[opponent])
-            print("Dot products: ", dot_1, dot_2)
-            input("Dot products")
+            # input("Updating....")
+            self.print_value_vectors(node_value_vectors[root.current_player], node_value_vectors[opponent], root.state.community_cards)
+            # input("Updated....")
+            # dot_1 = np.dot(player_ranges[root.current_player], node_value_vectors[root.current_player])
+            # dot_2 = np.dot(player_ranges[opponent], node_value_vectors[opponent])
+            # print("Dot products: ", dot_1, dot_2)
+            # input("Dot products")
             strategy_t = self.update_strategy(root, True)
             self.print_strategy_matrix(root.state.community_cards, strategy_t)
-            input("Updated strategy matrix")
+            # input("Updated strategy matrix")
             all_strategies.append(strategy_t)
         
 
@@ -559,8 +628,9 @@ class DeepStackResolver(Resolver):
 
         print("Lenght: ", len(all_strategies))
         if len(root.state.community_cards) == 5:
-            self.print_strategy_matrix(root.state.community_cards, mean_strategy)
+            self.print_strategy_matrix(root.state.community_cards, last_strategy)
             self.print_value_vectors(node_value_vectors[root.current_player], node_value_vectors[opponent], root.state.community_cards)
+            self.print_strategy_matrix_and_value_vectors(node_value_vectors[root.current_player], node_value_vectors[opponent], root.state.community_cards, last_strategy)
             input("After all")
         # print(last_strategy)
 

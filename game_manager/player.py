@@ -102,7 +102,7 @@ class HumanPlayer(Player):
         try:
             return input_to_action[selected_action]
         except:
-            return list(input_to_action.values())[0]
+            return list(input_to_action.values())[1]
 
 
 class AIPlayer(Player):
