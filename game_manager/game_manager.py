@@ -232,14 +232,27 @@ class TexasHoldemRoundManager(RoundManager):
     def play_round(self):
         super().initialize_round()
 
-        self.play_preflop()
-        self.play_flop()
-        self.play_turn_river()
-        self.play_turn_river()
+        stages = [
+            self.play_preflop,
+            self.play_flop,
+            self.play_turn_river,
+            self.play_turn_river,
+        ]
 
-        self.finalize_round()
-
+        for stage in stages:
+            # calling each stage-function in stages sequentially, checking if round of poker should be ended
+            stage()
+            if self.round_of_poker_is_over():
+                self.finalize_round(winners=self.remaining_players())
+                break
+        else:
+            # if poker game never ends early: no winner has been determined
+            self.finalize_round()
         self.set_starting_player_index()
+    
+    def round_of_poker_is_over(self):
+        # all players except one have folded
+        return len(self.remaining_players()) == 1
 
     def get_small_and_big_blind_players(self):
         index = self.starting_player_index
@@ -256,11 +269,12 @@ class TexasHoldemRoundManager(RoundManager):
 
         return small_blind_player, big_blind_player
 
-    def finalize_round(self):
+    def finalize_round(self, winners=None):
         # show cards
 
-        winners = self.game_manager.hands_evaluator.get_winner(
-            self.remaining_players(), self.community_cards)
+        if not winners:
+            winners = self.game_manager.hands_evaluator.get_winner(
+                self.remaining_players(), self.community_cards)
         self.game_manager.user_interface.round_over(
             self.game_manager.players, self.community_cards, winners)
         self.game_manager.pot_manager.distribute_pot(

@@ -122,6 +122,12 @@ class AIPlayer(Player):
 
         # resolver = self.pure_rollout_resolver if random.random(
         # ) < self.probability_of_pure_rollout else self.deepstack_resolver
+            
+        if len(state.players) != 2:
+            # deepstack-resolver is not possible
+            resolver = self.pure_rollout_resolver
+        
+        print(f"Resolving with {'PureRolloutResolver' if resolver == self.pure_rollout_resolver else 'DeepstackResolver'}...")
         action = resolver.choose_action(self, state)
         return action
 

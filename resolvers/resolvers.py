@@ -592,7 +592,10 @@ class DeepStackResolver(Resolver):
         input()
         return player_action, r_1_given_action, r_2
 
-    def choose_action(self, player, state): 
+    def choose_action(self, player, state):
+        # not possible if the number of players is not 2
+        assert len(state.players) == 2
+
         player_action, updated_r_1, r_2 = self.resolve(state, player, self.r_1, self.r_2, 20)
         # print(updated_r_1)
         # input()
