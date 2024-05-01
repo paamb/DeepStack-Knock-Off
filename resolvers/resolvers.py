@@ -1,6 +1,4 @@
 import numpy as np
-import networkx as nx
-import matplotlib.pyplot as plt
 from poker_oracle.monte_carlo import MonteCarlo
 
 from game_manager.pivotal_parameters import pivotal_parameters as piv
@@ -437,29 +435,19 @@ class DeepStackResolver(Resolver):
             for i in range(len(value_vectors_with_holepairs)):
                 file.write(f"{value_vectors_with_holepairs[i][0]} | {value_vectors_with_holepairs[i][1]} | {value_vectors_with_holepairs[i][2]} \n")
 
-
-    def display_tree(self, node, depth=0):
-        indent = "         " * depth
-        if isinstance(node, PlayerNode):
-            print(indent + str(node) + ": " + str(node.current_player))
-        else: 
-            print(indent + str(type(node)))
-
-        for edge_type, child in node.child_nodes:
-            print(indent + "└─", edge_type)
-            self.display_tree(child, depth + 1)
-    # def display_tree(self, node, prefix='', is_tail=True):
-    #     print(prefix + ('└── ' if is_tail else '├── ') + node.name)
-    #     for i, (edge_type, child) in enumerate(node.children):
-    #         is_last_child = i == len(node.children) - 1
-    #         self.display_tree(child, prefix + ('    ' if is_tail else '│   '), is_last_child)
+    def display_tree(self, node, prefix='', is_tail=True, action=None):
+        print(prefix + ('└── ' if is_tail else '├── ') + (f'{action}: ' if action else '') + str(type(node)))
+        for i, (action, child) in enumerate(node.child_nodes):
+            is_last_child = i == len(node.child_nodes) - 1
+            self.display_tree(child, prefix + ('    ' if is_tail else '│   '), is_last_child, action)
 
     def resolve(self, s, player, r_1, r_2, num_rollouts): 
         # s = state, r_1 = range of player 1, r_2 = range of player 2, T = number of rollouts
         root = self.generate_initial_subtree(s, player, piv.number_of_allowed_bets_resolver)
         
         if piv.verbose:
-            self.display_tree(root, 0)
+            print("Generated subtree:")
+            self.display_tree(root)
 
         opponent = root.get_opponent()
         player_ranges = {
