@@ -7,8 +7,9 @@ class PivotalParameters:
     small_blind = 5.0
     number_of_allowed_bets_resolver = 2
     number_of_chance_node_children = 5
-    number_of_rollouts = 1
-    average_pot_size = 50
+    number_of_deep_stack_rollouts = 40
+    average_pot_size = 30
+    verbose = True
 
 
 pivotal_parameters = PivotalParameters()

@@ -16,8 +16,6 @@ class UtilityMatrixStorage:
 
     def is_utility_matrix_created(self, cards):
         card_key = self.cards_as_string(cards)
-        print(card_key)
-        print(self.utility_matrices.keys())
         return card_key in self.utility_matrices.keys()
 
     def get_utility_matrix(self, cards):
@@ -70,10 +68,10 @@ class UtilityMatrixHandler:
 
     def get_utility_matrix(self, public_cards):
         if self.storage.is_utility_matrix_created(public_cards): 
-            print("UtiityMatrix exists")
+            print(f"Utiity matrix for public cards {public_cards} already exists. Fetching matrix...")
             utility_matrix = self.storage.get_utility_matrix(public_cards)
         else:
-            print("creating_utility_matrix")
+            print(f"Creating utility matrix for public cards: {public_cards}...")
             utility_matrix = self.generate_utility_matrix(public_cards)
             self.storage.add_matrix(public_cards, utility_matrix)
 
