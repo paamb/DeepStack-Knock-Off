@@ -1,8 +1,9 @@
 import numpy as np
 from poker_oracle.monte_carlo import MonteCarlo
 from game_manager.pivotal_parameters import pivotal_parameters as piv
+from game_manager.constants import constants as const
 
-NUM_HOLE_PAIRS = 1326
+NUM_HOLE_PAIRS = const.num_hole_pairs
 
 class TreeNode():
     def __init__(self, current_player, state) -> None:
@@ -63,8 +64,8 @@ class EndNode(TreeNode):
         opponent = node.get_opponent()
 
         value_vectors = {
-            node.current_player: np.random.randn(1326),
-            opponent: -np.random.randn(1326)
+            node.current_player: np.random.randn(NUM_HOLE_PAIRS),
+            opponent: -np.random.randn(NUM_HOLE_PAIRS)
         }
         return value_vectors
 

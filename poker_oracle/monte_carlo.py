@@ -1,21 +1,15 @@
 from game_manager.deck_manager import Card, DeckManager
 from game_manager.pivotal_parameters import PivotalParameters as piv
-
-# from poker_oracle.hands_evaluator.utils import suits, ranks, card_values
+from game_manager.constants import constants as const
 import csv
-
-card_values = {'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
-               '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2, 'AL': 1}
-suits = ['C', 'D', 'H', 'S']
-ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
 
 
 class MonteCarlo:
 
     def generate_all_cards(self):
         all_cards = []
-        for suit in suits:
-            for rank in ranks:
+        for suit in const.suits:
+            for rank in const.ranks:
                 all_cards.append(suit+rank)
         return all_cards
 
@@ -23,7 +17,7 @@ class MonteCarlo:
         # Generates a list of cards as a string values ('C2') and sorts them
         all_cards = self.generate_all_cards()
         # Sorts all cards by suit and value
-        sort_cards = sorted(all_cards, key=lambda x: (x[0], card_values[x[1]]))
+        sort_cards = sorted(all_cards, key=lambda x: (x[0], const.card_values[x[1]]))
         return sort_cards
 
     def get_all_possible_hole_pairs(self):
@@ -83,7 +77,7 @@ class MonteCarlo:
         """
         suit_1, value_1, suit_2, value_2 = hole_pair
 
-        if card_values[value_1] > card_values[value_2]:
+        if const.card_values[value_1] > const.card_values[value_2]:
             value_2, value_1 = value_1, value_2
 
         if value_1 == value_2:
@@ -187,7 +181,7 @@ if __name__ == '__main__':
     print("Generate poker cheat sheet for each class...")
     filename_class = 'hole_pair_win_probability_class'
     montecarlo = MonteCarlo()
-    win_probabilites_for_classes = montecarlo.evaluate_all_hole_pair_win_probabilities_classes(num_rollouts=100)
+    win_probabilites_for_classes = montecarlo.evaluate_all_hole_pair_win_probabilities_classes(num_rollouts=10000)
     montecarlo.write_probability_dictionary_to_file(
         win_probabilites_for_classes, filename_class)
     print(f"Cheat sheet written to file: {filename_class}")
@@ -195,7 +189,7 @@ if __name__ == '__main__':
     print(f"Generate hole pair win probability individual holepair...")
     filename_individual = 'hole_pair_win_probability_individual'
     all_hole_pairs = montecarlo.get_all_possible_hole_pairs()
-    win_probabilities_for_cards = montecarlo.evaluate_all_hole_pair_win_probabilities(all_hole_pairs, num_rollouts=100)
+    win_probabilities_for_cards = montecarlo.evaluate_all_hole_pair_win_probabilities(all_hole_pairs, num_rollouts=1000)
     montecarlo.write_probability_dictionary_to_file(
         win_probabilities_for_cards, filename_individual, is_class_probability=False)
     print(f"Hole pair win probability individual holepair written to file: {filename_individual}")

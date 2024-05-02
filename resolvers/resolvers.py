@@ -5,9 +5,10 @@ from game_manager.pivotal_parameters import pivotal_parameters as piv
 from state_manager.state_manager import StateManager
 from game_manager.deck_manager import DeckManager
 from .subtree import PlayerNode, EndNode, ChanceNode, ShowDownNode, FoldNode, NeuralNetNode
+from game_manager.constants import constants as const
 
 
-NUM_HOLE_PAIRS = 1326
+NUM_HOLE_PAIRS = const.num_hole_pairs
 
 class Resolver():
     def __init__(self) -> None:
@@ -54,9 +55,9 @@ class DeepStackResolver(Resolver):
                 if card_str == card_pair[:2] or card_str == card_pair[2:]:
                     card_to_range_indexes_to_zero[card_str].append(i)
 
-        assert len(card_to_range_indexes_to_zero.keys()) == 52
+        assert len(card_to_range_indexes_to_zero.keys()) == const.num_cards_in_deck
         for key, value in card_to_range_indexes_to_zero.items():
-            assert len(value) == 51
+            assert len(value) == const.num_cards_in_deck - 1
 
         return card_to_range_indexes_to_zero
     
@@ -103,10 +104,6 @@ class DeepStackResolver(Resolver):
             node_value_vectors = self.subtree_traversal_rollout(root, player_ranges)
             strategy_t = self.update_strategy(root, True)
             all_strategies.append(strategy_t)
-
-            # # printing ranges and strategy to file
-            # self.print_player_ranges(player_ranges, root)
-            # self.print_strategy_matrix(root.state.community_cards, strategy_t)
             
         # Convert the list of strategies to np array
         all_strategies = np.array(all_strategies)
@@ -394,9 +391,6 @@ class DeepStackResolver(Resolver):
         value_vectors_with_holepairs = [(hole_pairs[i], v_1[i], v_2[i]) for i in range(len(hole_pairs))]
         value_vectors_with_holepairs.sort(key=lambda x: (x[1]), reverse=True)
         with open('value_vector_output.txt', 'w') as file:
-            sum_v1 = np.sum(v_1)
-            sum_v2 = np.sum(v_2)
-            file.write(f"Sums: {sum_v1}, {sum_v2} \n", )
             for card in community_cards:
                 file.write(str(card))
             file.write("Hole pair | V_1 | V_2\n")
@@ -476,24 +470,6 @@ if __name__ == '__main__':
     from state_manager.state_manager import State
     from game_manager.game_manager import RoundManager
     from game_manager.game_manager import GameManager
-    # player = AIPlayer()
-    # player.chips = 20
-    # player.betted_chips = 0
-    # resolver = PureRolloutResolver()
     game_manager = GameManager()
     round_manager = RoundManager(game_manager)
     state = State(round_manager)
-    # state.remaining_players = 2
-    # state.pot_size_if_all_remaining_players_bets = 40
-    # state.pot_size_if_all_remaining_players_calls = 20
-    # # state.
-    # actions = ['C', 'B', 'F', 'A']
-    # win_probabilities = [i/10 for i in range(0, 11)]
-    # for win_probability in win_probabilities:
-    #     all_expected = []
-    #     for action in actions:
-    #         all_expected.append((win_probability, action, resolver.expected_utility(
-    #             player, action, state, win_probability)))
-    #     expected_utility_sorted = sorted(
-    #         all_expected, key=lambda x: x[2], reverse=True)
-    #     print(expected_utility_sorted)

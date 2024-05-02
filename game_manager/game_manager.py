@@ -209,6 +209,9 @@ class ActionManager():
 
 
 class TexasHoldemRoundManager(RoundManager):
+    """
+    Inherits round manager. Currently TexasHoldem is the only game that is playable.
+    """
     def __init__(self, game_manager) -> None:
         super().__init__(game_manager)
 

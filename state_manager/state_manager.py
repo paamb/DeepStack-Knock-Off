@@ -1,8 +1,6 @@
 from game_manager.pivotal_parameters import pivotal_parameters as piv
 
 class State:
-    # def __init__(self):
-
     def set_state_from_round_manager(self, round_manager):
         self.legal_actions = ['F', 'C', 'B', 'A']
         self.community_cards = round_manager.community_cards
@@ -17,15 +15,11 @@ class State:
         
         # The most amount of money a player has put into the pot
         self.current_bet = round_manager.current_bet
-        # self.remaining_players = round_manager.remaining_players()
-        # self.players = round_manager.game_manager.players
         self.num_remaining_players = round_manager.num_remaining_players()
         self.pot_size_if_all_remaining_players_calls = round_manager.get_pot_size_if_all_remaining_players_calls()
         self.pot_size_if_all_remaining_players_bets = round_manager.get_pot_size_if_all_remaining_players_bets()
 
     def set_state_from_previous_state(self, previous_state):
-        # new_community_cards = list(previous_state.community_cards)
-        # print(new_community_cards)
         self.community_cards = list(previous_state.community_cards)
         self.pot = previous_state.pot
         self.chips_per_player = dict(previous_state.chips_per_player)
@@ -37,15 +31,6 @@ class State:
         self.pot_size_if_all_remaining_players_calls = previous_state.pot_size_if_all_remaining_players_calls
         self.pot_size_if_all_remaining_players_bets = previous_state.pot_size_if_all_remaining_players_bets
 
-        # print("Community_cards", self.community_cards)
-
-    def update_state_player_node(self):
-
-        # self.pot += value
-        pass
-
-    def update_state_chance_node(self):
-        pass
 
 
     def player_calls(self, player):
@@ -83,10 +68,6 @@ class State:
         self.add_money_to_pot(player_chips)
         self.set_current_bet(new_betted_chips)
 
-    # def set_player_legal_actions(self, player): 
-    #     player_chips, player_betted_chips = self.chips_per_player[player]
-    #     updated_legal_actions = ['F']
-    #     if 
 
     def set_legal_actions_from_player_node(self, node):
         current_player = node.current_player
@@ -147,13 +128,11 @@ class StateManager:
         next_state = State()
         next_state.set_state_from_previous_state(previous_state)
         if node_type == 'chance_node':
-            # print("Coming in here")
             self.next_state_after_chance_node(next_state, action)
         elif node_type == 'player_node':
             self.next_state_after_player_node(node.current_player, next_state, previous_state, action)
         # End node. Not coming in here
         else: 
-            # print("End node")
             self.next_state_after_end_node()
         
         return next_state

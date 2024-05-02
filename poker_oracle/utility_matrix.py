@@ -2,6 +2,7 @@ from poker_oracle.monte_carlo import MonteCarlo
 from poker_oracle.hands_evaluator.hands_evaluator import HandsEvaluator
 from game_manager.player import Player
 from game_manager.deck_manager import Card
+from game_manager.constants import constants as const
 
 import numpy as np
 
@@ -27,9 +28,7 @@ class UtilityMatrixStorage:
 
     def cards_as_string(self, cards):
         hand_as_string = [str(card) for card in cards]
-        card_values = {'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
-               '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2, 'AL': 1}
-        sorted_cards = sorted(hand_as_string, key=lambda x: (x[0], card_values[x[1]]))
+        sorted_cards = sorted(hand_as_string, key=lambda x: (x[0], const.card_values[x[1]]))
         sorted_cars_as_string = ''.join(sorted_cards)
         return sorted_cars_as_string
 
@@ -37,7 +36,7 @@ class UtilityMatrixHandler:
     """
     Generates and handles utility matrices.
     """
-    NUMBER_OF_HOLE_PAIRS = 1326
+    NUMBER_OF_HOLE_PAIRS = const.num_hole_pairs
 
     def __init__(self):
         self.utility_matrix = self.generate_empty_utility_matrix()

@@ -1,12 +1,7 @@
 from typing import List, Tuple, Dict
 from game_manager.deck_manager import Card
 from game_manager.player import Player
-card_values = {'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
-               '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2, 'AL': 1}
-suits = ['C', 'D', 'H', 'S']
-ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
-length_of_player_hand = 5
-
+from game_manager.constants import constants as const
 
 def find_highest_card_from_player_card_tuples(player_and_highest_card_tuples: List[Tuple[Player, int]]) -> int:
     # Expects list [(player, card_value (e.g 12) )]
@@ -24,7 +19,7 @@ def find_player_and_highest_card_for_each_player(player_cards: Dict[Player, List
 
 
 def get_card_int_value(card: Card):
-    return card_values[card.value]
+    return const.card_values[card.value]
 
 
 def get_list_of_card_values(cards: List[Card]):
@@ -67,7 +62,7 @@ def get_players_with_best_high_card(player_cards: Dict[Player, List[Card]]):
 
 
 def get_cards_excluding_value(cards: List[Card], value: str) -> List[Card]:
-    return [card for card in cards if card_values[card.value] != value]
+    return [card for card in cards if const.card_values[card.value] != value]
 
 
 def create_player_hands_excluding_value(player_cards: Dict[Player, List[Card]], value_to_exclude: int) -> Dict[Player, List[Card]]:

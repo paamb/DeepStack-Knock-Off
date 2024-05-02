@@ -2,12 +2,13 @@ from typing import Dict, List
 # from game_manager.player import Player
 from game_manager.deck_manager import Card
 from .utils import *
+from game_manager.constants import constants as const
 
 
 class HandsEvaluator():
 
     def sort_on_value(self, cards):
-        return sorted(cards, key=lambda card: card_values[card.value], reverse=True)
+        return sorted(cards, key=lambda card: const.card_values[card.value], reverse=True)
 
     def create_player_card_dictionary(self, players, community_cards):
         return {player: self.sort_on_value(
@@ -82,23 +83,23 @@ class HandsEvaluator():
         straight = False
         suit_count = {}
         for card in (cards):
-            if card_values[card.value] < previous_value - 1:
+            if const.card_values[card.value] < previous_value - 1:
                 # Return something indicating that we dont have a straight-flush
                 return False
 
-            if card_values[card.value] != previous_value:
+            if const.card_values[card.value] != previous_value:
                 unique_cards_counter += 1
 
             # Increment count suits
             suit_count[card.suit] = suit_count.get(card.suit, 0) + 1
 
             # Can break if we have reached the min value of the straight
-            if card_values[card.value] == min_value and unique_cards_counter == length_of_player_hand:
+            if const.card_values[card.value] == min_value and unique_cards_counter == const.length_of_player_hand:
                 straight = True
                 break
 
             # Count the suit to check if we have flush
-            previous_value = card_values[card.value]
+            previous_value = const.card_values[card.value]
 
         # Check if we have 5 the same suit
         return straight and any(count >= 5 for count in suit_count.values())
@@ -146,23 +147,23 @@ class HandsEvaluator():
             value_count[card.value] = value_count.get(card.value, 0) + 1
 
         sorted_cards_count = sorted(value_count.items(),
-                                    key=lambda x: card_values[x[0]], reverse=True)
+                                    key=lambda x: const.card_values[x[0]], reverse=True)
 
         # Find highest value that is not in n_oak
 
         # [('K', 3), ('Q',3), ()]
         kickers = []
-        total_num_kickers = length_of_player_hand - n
+        total_num_kickers = const.length_of_player_hand - n
         num_kickers = 0
         for value, count in sorted_cards_count:
             if count != n and num_kickers < total_num_kickers:
-                kickers.append(card_values[value])
+                kickers.append(const.card_values[value])
                 num_kickers += 1
 
         # Check for n of a kind
         for value, count in value_count.items():
             if count == n:
-                return (True, card_values[value], kickers)
+                return (True, const.card_values[value], kickers)
         return (False, 0, [])
 
     def player_has_4oak(self, cards):
@@ -246,7 +247,7 @@ class HandsEvaluator():
         if not players_with_full_house:
             return []
         sorted_players_with_full_house = sorted(
-            players_with_full_house, key=lambda x: (card_values[x[1]], card_values[x[2]]), reverse=True)
+            players_with_full_house, key=lambda x: (const.card_values[x[1]], const.card_values[x[2]]), reverse=True)
         best_full_house = sorted_players_with_full_house[0][1], sorted_players_with_full_house[0][2]
 
         best_players = [player_tuple[0] for player_tuple in players_with_full_house if (
@@ -296,18 +297,18 @@ class HandsEvaluator():
         unique_cards_counter = 1
         straight = False
         for card in cards:
-            if card_values[card.value] < previous_value - 1:
+            if const.card_values[card.value] < previous_value - 1:
                 # Return something indicating that we dont have a straight-flush
                 return False
 
-            if card_values[card.value] != previous_value:
+            if const.card_values[card.value] != previous_value:
                 unique_cards_counter += 1
             # Can break if we have reached the min value of the straight
-            if card_values[card.value] == min_value and unique_cards_counter == length_of_player_hand:
+            if const.card_values[card.value] == min_value and unique_cards_counter == const.length_of_player_hand:
                 straight = True
                 break
 
-            previous_value = card_values[card.value]
+            previous_value = const.card_values[card.value]
 
         return straight
 
@@ -322,9 +323,9 @@ class HandsEvaluator():
         # In Texas holdem we will loop over 3 possible straights
         cards = self.add_low_ace_cards(cards)
 
-        num_possible_straights = len(cards) - length_of_player_hand + 1
+        num_possible_straights = len(cards) - const.length_of_player_hand + 1
         for i in range(num_possible_straights):
-            max_value = card_values[cards[i].value]
+            max_value = const.card_values[cards[i].value]
 
             # The last card in the straight is 4 lower than highest
             min_value = max_value - 4
@@ -403,13 +404,13 @@ class HandsEvaluator():
 
         # Sort first on looking at 2nd element
         sorted_cards_count = sorted(value_count.items(),
-                                    key=lambda x: (x[1], card_values[x[0]]), reverse=True)
+                                    key=lambda x: (x[1], const.card_values[x[0]]), reverse=True)
 
         if sorted_cards_count[0][1] == 2 and sorted_cards_count[1][1] == 2:
             high_pair = sorted_cards_count[0][0]
             low_pair = sorted_cards_count[1][0]
             high_card = sorted_cards_count[2][0]
-            return (True, card_values[high_pair], card_values[low_pair], card_values[high_card])
+            return (True, const.card_values[high_pair], const.card_values[low_pair], const.card_values[high_card])
         return (False, 0, 0, 0)
 
     def get_players_with_best_two_pairs_and_kicker(self, players_with_2oak: List[Tuple[Player, int, int, int]]) -> List[Player]:

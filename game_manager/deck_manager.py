@@ -1,5 +1,5 @@
 import random
-
+from game_manager.constants import constants as const
 
 class Card:
     def __init__(self, suit, value) -> None:
@@ -19,9 +19,6 @@ class Card:
 
 
 class DeckManager():
-    # Spades, Hearths, Diamonds, Clubs
-    suits = ['S', 'H', 'D', 'C']
-    values = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
 
     def __init__(self, custom_deck_without_certain_cards=False, invalid_cards=[]) -> None:
         if not custom_deck_without_certain_cards:
@@ -31,19 +28,18 @@ class DeckManager():
 
     def create_deck_of_cards(self):
         self.cards = [Card(suit, value)
-                      for value in self.values for suit in self.suits]
+                      for value in const.ranks for suit in const.suits]
 
     def create_deck_of_cards_without_cards(self, invalid_cards):
         cards = []
-        for value in self.values:
-            for suit in self.suits:
+        for value in const.ranks:
+            for suit in const.suits:
                 new_card = Card(suit, value)
                 if new_card not in invalid_cards:
                     cards.append(new_card)
         self.cards = cards
 
     def shuffle_cards(self):
-        # assert len(self.cards) == 52
         random.shuffle(self.cards)
 
     def get_n_cards(self, num_cards):
