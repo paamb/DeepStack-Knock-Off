@@ -4,7 +4,7 @@ from game_manager.constants import constants as const
 import csv
 
 
-class MonteCarlo:
+class Simulation:
 
     def generate_all_cards(self):
         all_cards = []
@@ -180,17 +180,27 @@ class MonteCarlo:
 if __name__ == '__main__':
     print("Generate poker cheat sheet for each class...")
     filename_class = 'hole_pair_win_probability_class'
-    montecarlo = MonteCarlo()
-    win_probabilites_for_classes = montecarlo.evaluate_all_hole_pair_win_probabilities_classes(num_rollouts=10000)
-    montecarlo.write_probability_dictionary_to_file(
+    simulation = Simulation()
+    win_probabilites_for_classes = simulation.evaluate_all_hole_pair_win_probabilities_classes(num_rollouts=10000)
+    simulation.write_probability_dictionary_to_file(
         win_probabilites_for_classes, filename_class)
     print(f"Cheat sheet written to file: {filename_class}")
 
     print(f"Generate hole pair win probability individual holepair...")
     filename_individual = 'hole_pair_win_probability_individual'
-    all_hole_pairs = montecarlo.get_all_possible_hole_pairs()
-    win_probabilities_for_cards = montecarlo.evaluate_all_hole_pair_win_probabilities(all_hole_pairs, num_rollouts=1000)
-    montecarlo.write_probability_dictionary_to_file(
+    all_hole_pairs = simulation.get_all_possible_hole_pairs()
+    win_probabilities_for_cards = simulation.evaluate_all_hole_pair_win_probabilities(all_hole_pairs, num_rollouts=1000)
+    simulation.write_probability_dictionary_to_file(
         win_probabilities_for_cards, filename_individual, is_class_probability=False)
     print(f"Hole pair win probability individual holepair written to file: {filename_individual}")
+
+    print(f"Generate hole pair win probability individual holepair given public cards...")
+    filename_individual_public = 'hole_pair_win_probability_individual_given_public_cards'
+    all_hole_pairs = simulation.get_all_possible_hole_pairs()
+
+    public_cards = [Card('S', 'A'), Card('S', 'K'), Card('S', 'Q'), Card('S', 'J')]
+    win_probabilities_for_cards = simulation.evaluate_all_hole_pair_win_probabilities(all_hole_pairs, num_rollouts=100, community_cards=public_cards)
+    simulation.write_probability_dictionary_to_file(
+        win_probabilities_for_cards, filename_individual_public, is_class_probability=False)
+    print(f"Hole pair win probability individual holepair written to file: {filename_individual_public}")
 

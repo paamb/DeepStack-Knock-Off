@@ -1,4 +1,4 @@
-from poker_oracle.monte_carlo import MonteCarlo
+from poker_oracle.simulation import Simulation
 from poker_oracle.hands_evaluator.hands_evaluator import HandsEvaluator
 from game_manager.player import Player
 from game_manager.deck_manager import Card
@@ -40,7 +40,7 @@ class UtilityMatrixHandler:
 
     def __init__(self):
         self.utility_matrix = self.generate_empty_utility_matrix()
-        self.all_hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        self.all_hole_pairs = Simulation().get_all_possible_hole_pairs()
 
         # Used for storing and fetching pre-computed utility matrices
         self.storage = UtilityMatrixStorage()
@@ -147,6 +147,7 @@ if __name__ == "__main__":
 
     public_cards = [Card('S', '6'), Card('S', '5'), Card('C', 'J'), Card('D', 'A'), Card('C', 'A')]
     utility_matrix = utility_matrix_handler.get_utility_matrix(public_cards)
+
     print(utility_matrix)
 
     

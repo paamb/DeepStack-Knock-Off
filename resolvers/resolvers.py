@@ -1,5 +1,5 @@
 import numpy as np
-from poker_oracle.monte_carlo import MonteCarlo
+from poker_oracle.simulation import Simulation
 
 from game_manager.pivotal_parameters import pivotal_parameters as piv
 from state_manager.state_manager import StateManager
@@ -12,7 +12,7 @@ NUM_HOLE_PAIRS = const.num_hole_pairs
 
 class Resolver():
     def __init__(self) -> None:
-        self.monte_carlo = MonteCarlo()
+        self.monte_carlo = Simulation()
     pass
 
 
@@ -303,7 +303,7 @@ class DeepStackResolver(Resolver):
         return next_node
 
     def print_player_ranges(self, player_ranges, node):
-        hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        hole_pairs = Simulation().get_all_possible_hole_pairs()
         community_cards = node.state.community_cards
         r_1 = player_ranges[node.current_player]
         opponent = node.get_opponent()
@@ -349,7 +349,7 @@ class DeepStackResolver(Resolver):
         return best_action, index_of_best_action
 
     def print_strategy_matrix(self, community_cards, strategy_matrix):
-        hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        hole_pairs = Simulation().get_all_possible_hole_pairs()
         
         with open('strategy_output.txt', 'w') as file:
             for card in community_cards:
@@ -387,7 +387,7 @@ class DeepStackResolver(Resolver):
 
 
     def print_value_vectors(self, v_1, v_2, community_cards):
-        hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        hole_pairs = Simulation().get_all_possible_hole_pairs()
         value_vectors_with_holepairs = [(hole_pairs[i], v_1[i], v_2[i]) for i in range(len(hole_pairs))]
         value_vectors_with_holepairs.sort(key=lambda x: (x[1]), reverse=True)
         with open('value_vector_output.txt', 'w') as file:

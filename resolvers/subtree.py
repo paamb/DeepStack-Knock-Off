@@ -1,5 +1,5 @@
 import numpy as np
-from poker_oracle.monte_carlo import MonteCarlo
+from poker_oracle.simulation import Simulation
 from game_manager.pivotal_parameters import pivotal_parameters as piv
 from game_manager.constants import constants as const
 
@@ -39,7 +39,7 @@ class PlayerNode(TreeNode):
         return new_player_ranges_for_action
 
     def print_player_ranges(self, range_1):
-        hole_pairs = MonteCarlo().get_all_possible_hole_pairs()
+        hole_pairs = Simulation().get_all_possible_hole_pairs()
         with open('ranges_in_bayesian_update_output.txt', 'w') as file:
             file.write("Hole pair | r_1 | r_2 \n")
             for i in range(len(hole_pairs)):

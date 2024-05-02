@@ -117,12 +117,6 @@ class StateManager:
             next_state.player_all_in(player)
         return next_state
 
-        
-        pass
-
-    def next_state_after_end_node(self):
-        pass
-
     def next_state(self, node, node_type, action=None):
         previous_state = node.state
         next_state = State()
