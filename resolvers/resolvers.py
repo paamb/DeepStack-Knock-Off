@@ -428,8 +428,9 @@ class PureRolloutResolver(Resolver):
 
         expected_utility_sorted = sorted(
             expected_utility, key=lambda x: x[1], reverse=True)
-        print(win_probability, expected_utility_sorted)
-        # input()
+        if piv.verbose:
+            print(win_probability, expected_utility_sorted)
+            input()
 
         return expected_utility_sorted[0][0]
 

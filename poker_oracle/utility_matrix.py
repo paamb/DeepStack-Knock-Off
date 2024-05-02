@@ -3,7 +3,7 @@ from poker_oracle.hands_evaluator.hands_evaluator import HandsEvaluator
 from game_manager.player import Player
 from game_manager.deck_manager import Card
 from game_manager.constants import constants as const
-
+from game_manager.pivotal_parameters import pivotal_parameters as piv
 import numpy as np
 
 
@@ -94,10 +94,12 @@ class UtilityMatrixHandler:
 
     def get_utility_matrix(self, public_cards):
         if self.storage.is_utility_matrix_created(public_cards): 
-            print(f"Utiity matrix for public cards {public_cards} already exists. Fetching matrix...")
+            if piv.verbose:
+                print(f"Utiity matrix for public cards {public_cards} already exists. Fetching matrix...")
             utility_matrix = self.storage.get_utility_matrix(public_cards)
         else:
-            print(f"Creating utility matrix for public cards: {public_cards}...")
+            if piv.verbose:
+                print(f"Creating utility matrix for public cards: {public_cards}...")
             utility_matrix = self.generate_utility_matrix(public_cards)
             self.storage.add_matrix(public_cards, utility_matrix)
 

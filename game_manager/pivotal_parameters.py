@@ -5,6 +5,7 @@ class PivotalParameters:
     number_of_human_players = 1
     number_of_AI_players = 1
 
+
     # Only texas holdem for now
     game = "texasHoldem"
 
@@ -12,12 +13,13 @@ class PivotalParameters:
     starting_chips_per_player = 100.0
     small_blind = 5.0
 
+    # Risk aversness pure rollout resolver
+    risk_averseness = 0.4
 
     #### Values for the resolver ####
 
     # Restricts the tree in getting bigger
     number_of_allowed_bets_resolver = 2
-
     number_of_chance_node_children = 5
 
     # Rollouts
@@ -26,7 +28,7 @@ class PivotalParameters:
 
     # Used when calculating the 
     average_pot_size = 30
-    verbose = False
+    verbose = True
 
 
 pivotal_parameters = PivotalParameters()

@@ -45,6 +45,12 @@ class RoundManager:
             
             current_player_index, number_of_actions = self.increment_current_player_index_and_number_of_actions(current_player_index, number_of_actions)
 
+    # def multiple_players_with_chips_left(self):
+    #     players = game_manager.players
+    #     player_with_chips_left = [player for player in players if player.chips > 0]
+    #     return len(player_with_chips_left) > 1
+
+
     def initialize_round(self):
         # Initialized for each new round
         self.current_bet = 2 * piv.small_blind

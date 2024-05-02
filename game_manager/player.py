@@ -119,7 +119,7 @@ class AIPlayer(Player):
         AI player. Generates action through pure rollout resolving or through deep stack resolving.
     """
 
-    def __init__(self, chips=piv.starting_chips_per_player, hide_cards=False, probability_of_pure_rollout=0, risk_averseness=0.4):
+    def __init__(self, chips=piv.starting_chips_per_player, hide_cards=False, probability_of_pure_rollout=0, risk_averseness=piv.risk_averseness):
         super().__init__(chips, hide_cards=hide_cards)
         self.probability_of_pure_rollout = probability_of_pure_rollout
         self.pure_rollout_resolver = PureRolloutResolver()
