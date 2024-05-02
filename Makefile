@@ -9,7 +9,7 @@ expected:
 	python3 -m resolvers.resolvers
 
 hole:
-	python3 -m poker_oracle.monte_carlo
+	python3 -m poker_oracle.simulation
 
 # Target for testing the rules manager
 # 
