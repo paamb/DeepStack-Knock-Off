@@ -412,6 +412,10 @@ class PureRolloutResolver(Resolver):
         return win_probability
 
     def choose_action(self, player, state):
+        """
+            Chooses an action based of MEU (maximum expected utility principle)
+            The action the gives the highest MEU based of win probability and pot size will be chosen.
+        """
         win_probability = self.get_win_probability_from_hole_cards(
             player, state.community_cards, num_opponents=state.num_remaining_players - 1)
 
@@ -425,6 +429,7 @@ class PureRolloutResolver(Resolver):
         expected_utility_sorted = sorted(
             expected_utility, key=lambda x: x[1], reverse=True)
         print(win_probability, expected_utility_sorted)
+        # input()
 
         return expected_utility_sorted[0][0]
 
@@ -434,8 +439,6 @@ class PureRolloutResolver(Resolver):
 
         amount_to_call = state.get_amount_to_call(player)
         amount_to_bet = state.get_amount_to_bet(player)
-
-        # pot_size_if_all_remaining_players_calls
 
         hypothetical_won_money_estimate = {
             'F': 0,
@@ -458,6 +461,9 @@ class PureRolloutResolver(Resolver):
         return expected_utility_from_normal_distribution
 
     def utility_of_money(self, money, risk_averseness):
+        """
+            Utility function = money^(risk_averseness)
+        """
         # the utility of money is often non-linear
         money = max(money, 0)
         return money**risk_averseness

@@ -8,10 +8,10 @@ import random
 
 
 class Player():
-
-    # Abstrakt
-    # CardContainer
-    # Chips
+    """ 
+        A player in the real game
+        Also used when simulating games in rollouts
+    """
 
     def __init__(self, chips=piv.starting_chips_per_player, hide_cards=False) -> None:
         self.hand = []
@@ -29,6 +29,7 @@ class Player():
 
 
     def action():
+        # This needs to be implemented in classes inheriting Player
         pass
 
     def is_busted(self):
@@ -41,6 +42,9 @@ class Player():
         self.is_folded = True
 
     def check_or_call(self, current_bet=0):
+        """
+            Update personal chips when check or calling
+        """
         amount_to_call = current_bet - self.betted_chips
         if self.chips >= amount_to_call:
             self.betted_chips += amount_to_call
@@ -50,6 +54,9 @@ class Player():
             self.all_in()
 
     def bet_or_raise(self, current_bet, amount):
+        """
+            Update personal chips when bet or raise
+        """
         assert self.chips > current_bet - self.betted_chips
 
         amount_to_bet = current_bet - self.betted_chips + amount
@@ -62,6 +69,9 @@ class Player():
             return self.all_in()
 
     def all_in(self):
+        """
+            Update personal chips when all-in
+        """
         self.betted_chips += self.chips
         self.chips = 0
         return self.betted_chips
@@ -84,11 +94,11 @@ class Player():
     def __repr__(self) -> str:
         return self.__str__()
 
-    pass
-
 
 class HumanPlayer(Player):
-    # Action() (Betting. Takes in gamestate)
+    """
+        Human player. Manual input for action.
+    """
     def action(self, state):
 
         input_to_action = {
@@ -105,6 +115,9 @@ class HumanPlayer(Player):
 
 
 class AIPlayer(Player):
+    """
+        AI player. Generates action through pure rollout resolving or through deep stack resolving.
+    """
 
     def __init__(self, chips=piv.starting_chips_per_player, hide_cards=False, probability_of_pure_rollout=0, risk_averseness=0.4):
         super().__init__(chips, hide_cards=hide_cards)
@@ -114,7 +127,10 @@ class AIPlayer(Player):
         self.risk_averseness = risk_averseness
 
     def action(self, state):
-        if len(state.community_cards) == 5:
+        """
+            Generates action from pure rollout resolver in pre-flop, flop and turn. In river it uses deepstack resolver.
+        """
+        if len(state.community_cards) == const.num_public_cards_in_end_stage:
             resolver = self.deepstack_resolver
         else:
             resolver = self.pure_rollout_resolver
@@ -122,6 +138,7 @@ class AIPlayer(Player):
         # resolver = self.pure_rollout_resolver if random.random(
         # ) < self.probability_of_pure_rollout else self.deepstack_resolver
             
+        # We only play with deepstack when there are 2 players
         if len(state.players) != 2:
             # deepstack-resolver is not possible
             resolver = self.pure_rollout_resolver
@@ -129,6 +146,3 @@ class AIPlayer(Player):
         print(f"Resolving with {'PureRolloutResolver' if resolver == self.pure_rollout_resolver else 'DeepstackResolver'}...")
         action = resolver.choose_action(self, state)
         return action
-
-    # Action() - Must go throught algorithm before making move (needs betting aswell)
-    pass

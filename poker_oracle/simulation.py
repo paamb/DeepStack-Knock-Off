@@ -199,7 +199,8 @@ if __name__ == '__main__':
     all_hole_pairs = simulation.get_all_possible_hole_pairs()
 
     public_cards = [Card('S', 'A'), Card('S', 'K'), Card('S', 'Q'), Card('S', 'J')]
-    win_probabilities_for_cards = simulation.evaluate_all_hole_pair_win_probabilities(all_hole_pairs, num_rollouts=100, community_cards=public_cards)
+
+    win_probabilities_for_cards = simulation.evaluate_all_hole_pair_win_probabilities(all_hole_pairs, num_rollouts=1000, community_cards=public_cards)
     simulation.write_probability_dictionary_to_file(
         win_probabilities_for_cards, filename_individual_public, is_class_probability=False)
     print(f"Hole pair win probability individual holepair written to file: {filename_individual_public}")

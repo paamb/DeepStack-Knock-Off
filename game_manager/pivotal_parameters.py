@@ -26,7 +26,7 @@ class PivotalParameters:
 
     # Used when calculating the 
     average_pot_size = 30
-    verbose = True
+    verbose = False
 
 
 pivotal_parameters = PivotalParameters()

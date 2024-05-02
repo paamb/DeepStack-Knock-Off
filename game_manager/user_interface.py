@@ -95,25 +95,3 @@ class UserInterface():
         for action in possible_actions:
             print(ACTION_TO_PRETTY[action])
         print('\n')
-
-
-if __name__ == '__main__':
-    # torstein = Player()
-    # torstein.recieve_cards([Card('S', '3'), Card('S', '8')])
-    # paal = Player()
-    # paal.recieve_cards([Card('S', '2'), Card('S', '3')])
-
-    # card1 = Card('S', '4')
-
-    # card2 = Card('S', '5')
-    # card3 = Card('S', '6')
-    # card4 = Card('S', '7')
-
-    # card5 = Card('S', '9')
-
-    # community_cards = [card1, card2, card3, card4, card5]
-
-    # hands_evaluator = HandsEvaluator()
-    # print(hands_evaluator.get_winner([torstein, paal], community_cards))
-    # hands_evaluator.player_has_4oak([1, 2, 3, 4, 5, 6, 7])
-    pass

@@ -492,20 +492,3 @@ class HandsEvaluator():
 
         return best_players
 
-
-# if __name__ == '__main__':
-
-#     torstein = Player()
-#     torstein.receive_cards([Card('S', '3'), Card('S', '8')])
-#     paal = Player()
-#     paal.receive_cards([Card('S', '2'), Card('S', '3')])
-
-#     card1 = Card('S', '4')
-#     card2 = Card('S', '5')
-#     card3 = Card('S', '6')
-#     card4 = Card('S', '7')
-#     card5 = Card('S', '9')
-
-#     community_cards = [card1, card2, card3, card4, card5]
-
-#     hands_evaluator = HandsEvaluator()

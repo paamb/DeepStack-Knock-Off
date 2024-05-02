@@ -23,6 +23,28 @@ class RoundManager:
         self.starting_player_index = 0
         self.initialize_round()
 
+    def round_of_actions(self):
+        
+        # a round continues until everyone have had a turn, and everyone have bet the same amount (or all in)
+        current_player_index = self.starting_player_index
+        number_of_actions = 0
+        while not self.round_is_over(number_of_actions):
+            player = self.game_manager.players[current_player_index]
+
+            # If player has not folded or chips is not 0. The player can do an action.
+            if not player.is_folded and not player.chips == 0:
+                # Display acting player
+                self.game_manager.user_interface.display_state(
+                    self.game_manager.players, self.community_cards, current_player_index)
+                
+                update_starting_index = self.play_player_round(player)
+
+                # Update starting index if player has betted or gone all-in
+                if update_starting_index:
+                    self.starting_player_index = current_player_index
+            
+            current_player_index, number_of_actions = self.increment_current_player_index_and_number_of_actions(current_player_index, number_of_actions)
+
     def initialize_round(self):
         # Initialized for each new round
         self.current_bet = 2 * piv.small_blind
@@ -31,6 +53,7 @@ class RoundManager:
         self.deck_manager.shuffle_cards()
 
     def collect_cards(self):
+        # Collect cards after each round. An insert back in deck in deckmanager
         collected_cards = self.community_cards
         self.community_cards = []
 
@@ -73,17 +96,20 @@ class RoundManager:
         
     def get_and_perform_action(self, player):
         state = self.state_manager.get_state(self)
+
+        # Takes input from player. This can be an AI player or Human player
         action = player.action(state)
         action_bet, update_starting_index = self.game_manager.action_manager.perform_action(
             player, action, self.current_bet)
         return action_bet, update_starting_index
 
     def play_player_round(self, player):
-        
+
         # this is where the action from a player is requested and performed
         self.display_possible_actions(player)
         action_bet, update_starting_index = self.get_and_perform_action(player)
 
+        # Update the current bet
         if action_bet > self.current_bet:
             self.current_bet = action_bet
         return update_starting_index
@@ -94,28 +120,13 @@ class RoundManager:
             current_player_index = 0
         number_of_actions = number_of_actions + 1
         return current_player_index, number_of_actions
-
-    def round_of_actions(self):
-        # a round continues until everyone have had a turn, and everyone have bet the same amount (or all in)
-        current_player_index = self.starting_player_index
-        number_of_actions = 0
-        while not self.round_is_over(number_of_actions):
-            player = self.game_manager.players[current_player_index]
-
-            if not player.is_folded and not player.chips == 0:
-                self.game_manager.user_interface.display_state(
-                    self.game_manager.players, self.community_cards, current_player_index)
-                update_starting_index = self.play_player_round(player)
-                if update_starting_index:
-                    self.starting_player_index = current_player_index
-                
-            current_player_index, number_of_actions =self.increment_current_player_index_and_number_of_actions(current_player_index, number_of_actions)
             
-
     def get_amount_to_call(self, player):
+        # Chips amount to match chips on table for a player
         return self.current_bet - player.betted_chips
 
     def get_amount_to_bet(self, player):
+        # Chips amount to bet given the chips on table
         return self.get_amount_to_call(player) + 2 * piv.small_blind
 
     def get_pot_size_if_all_remaining_players_calls(self):
@@ -135,12 +146,17 @@ class RoundManager:
             self.game_manager.action_manager.perform_action(player, 'A')
 
     def round_is_over(self, number_of_actions):
+        """
+            All players must have done and action and match the bet on the table or have gone all-in
+        """
         if number_of_actions < len(self.game_manager.players):
             return False
 
         for player in self.remaining_players():
+            # Checks for all-in
             if player.chips == 0:
                 continue
+            # Checks if player has matched the bet
             elif player.betted_chips < self.current_bet:
                 return False
         return True
@@ -174,6 +190,9 @@ class ActionManager():
         pass
 
     def get_possible_actions(self, player, current_bet: int = 0, raise_amount: int = 2 * piv.small_blind):
+        """
+            Possible actions a player can perform
+        """
         possible_actions = []
         if player.chips + player.betted_chips > current_bet:
             possible_actions.append('C')
@@ -214,27 +233,15 @@ class TexasHoldemRoundManager(RoundManager):
     """
     def __init__(self, game_manager) -> None:
         super().__init__(game_manager)
-
-    def play_preflop(self):
-        super().deal_hole_cards(2)
-        # TOOO: choose the two previous active players, not just from player list (since all players, inluded busted players, are here)
-        player_small_blind, player_big_blind = self.get_small_and_big_blind_players()
-        
-        self.bet_small_blinds(player_small_blind, 1)
-        self.bet_small_blinds(player_big_blind, 2)
-        self.round_of_actions()
-
-    def play_flop(self):
-        super().deal_community_cards(3)
-        self.round_of_actions()
-
-    def play_turn_river(self):
-        super().deal_community_cards(1)
-        self.round_of_actions()
-
+    
     def play_round(self):
+        """
+            Plays one round with the 4 stages pre-flop, flop, turn and river. 
+        """        
+
         super().initialize_round()
 
+        # Stages of texas holdem (functions)
         stages = [
             self.play_preflop,
             self.play_flop,
@@ -252,12 +259,33 @@ class TexasHoldemRoundManager(RoundManager):
             # if poker game never ends early: no winner has been determined
             self.finalize_round()
         self.set_starting_player_index()
+
+    def play_preflop(self):
+        super().deal_hole_cards(2)
+        player_small_blind, player_big_blind = self.get_small_and_big_blind_players()
+        
+        self.bet_small_blinds(player_small_blind, 1)
+        self.bet_small_blinds(player_big_blind, 2)
+        self.round_of_actions()
+
+    def play_flop(self):
+        super().deal_community_cards(3)
+        self.round_of_actions()
+
+    def play_turn_river(self):
+        super().deal_community_cards(1)
+        self.round_of_actions()
     
     def round_of_poker_is_over(self):
         # all players except one have folded
         return len(self.remaining_players()) == 1
 
     def get_small_and_big_blind_players(self):
+        """
+            Returns the small and big blind players for current round
+        """
+
+        # Starting player index = 0 in very first round
         index = self.starting_player_index
         small_blind_player = None
         big_blind_player = None
@@ -372,6 +400,9 @@ class GameManager:
         self.action_manager = ActionManager()
 
     def create_players(self):
+        """
+            Generates players for the game.
+        """
         self.players = [HumanPlayer()
                         for _ in range(piv.number_of_human_players)]
         self.players += [AIPlayer(hide_cards=True)
@@ -381,21 +412,32 @@ class GameManager:
         if piv.game == 'texasHoldem':
             self.round_manager = TexasHoldemRoundManager(self)
         else:
-            self.round_manager = TexasHoldemRoundManager(self)
+            raise ValueError(f"{piv.game} is not a playable game (yet)")
 
-    def game_over(self):
+
+    def is_game_over(self):
+        """
+            Checks if there are only 1 player with chips left. If so, the game is over. 
+        """
         return len(list(filter(lambda player: player.chips > 0, self.players))) == 1
 
     def determine_winner(self):
+        """
+            Returns the player with chips left.
+        """
         players_with_chips_left = [
             player for player in self.players if player.chips > 0]
         assert len(players_with_chips_left) == 1
         return players_with_chips_left[0]
 
     def play_game(self):
-        while not self.game_over():
+        """
+            Main game loop from start to all players except 1 has chips left.
+        """
+        while not self.is_game_over():
             self.round_manager.play_round()
 
+        # Determines the winner of the whole game.
         winner = self.determine_winner()
         return winner
     pass
